@@ -12,11 +12,11 @@
 |---|---|
 | Current phase | Phase 0 — Foundation |
 | Last updated | 2026-10-31 |
-| Overall | 10 / 50 tasks done (40 build tasks remaining) |
+| Overall | 11 / 50 tasks done (39 build tasks remaining) |
 
 | Phase | Done / Total | Status |
 |---|---|---|
-| P0 Foundation | 6 / 8 | 🟡 |
+| P0 Foundation | 7 / 8 | 🟡 |
 | P1 Auth & users | 0 / 7 | ⬜ |
 | P2 Catalog & config | 0 / 5 | ⬜ |
 | P3 Quotations & subscriptions | 0 / 7 | ⬜ |
@@ -66,7 +66,7 @@
 | P0-01 | Scaffold monorepo | M1 | 0:00–0:20 | ✅ | 2026-10-31 14:53 / 15:04 IST |
 | P0-02 | Local infrastructure | M1 | 0:20–0:35 | ✅ | 2026-10-31 15:10 / 15:20 IST |
 | P0-03 | Database schema & migrations | M1 | 0:35–1:05 | ✅ | 2026-10-31 15:20 / 15:32 IST |
-| P0-04 | API core | M2 | 0:50–1:10 | ⬜ | |
+| P0-04 | API core | M2 | 0:50–1:10 | ✅ | 2026-10-31 16:00 / 16:08 IST |
 | P0-05 | Shared package basics | M2 | 0:20–0:50 | ✅ | 2026-10-31 15:24 / 15:32 IST |
 | P0-06 | Domain services (numbering, audit, settings, mail) | M2 | 1:10–1:30 | ⬜ | |
 | P0-07 | Web shell | M3 | 0:20–1:30 | ✅ | 2026-10-31; all required checks passed |
