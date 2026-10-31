@@ -12,6 +12,12 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "pnpm --filter @brightloop/shared build && pnpm -r typecheck",
     "test": "pnpm --filter @brightloop/shared build && pnpm -r test",
+    "test:db": "pnpm --filter @brightloop/api test:db",
+    "db:generate": "pnpm --filter @brightloop/api db:generate",
+    "db:validate": "pnpm --filter @brightloop/api db:validate",
+    "db:migrate": "pnpm --filter @brightloop/api db:migrate",
+    "db:deploy": "pnpm --filter @brightloop/api db:deploy",
+    "db:status": "pnpm --filter @brightloop/api db:status",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
