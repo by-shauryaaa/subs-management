@@ -1,0 +1,216 @@
+# PROGRESS — Brightloop build tracker
+
+> **Every team member updates this file.** Before starting a task, mark it 🟡 with the time you started. After finishing (all checks green), mark it ✅ and add a log entry at the **top** of the Work log. Record every non-trivial choice in the Decisions log. Never delete history; correct it with a new entry.
+
+**Status legend:** ⬜ Not started · 🟡 In progress · ✅ Done · ⛔ Blocked · ⏭️ Skipped (with reason)
+
+---
+
+## Snapshot
+
+| | |
+|---|---|
+| Current phase | Phase 0 — Foundation |
+| Last updated | 2026-10-31 |
+| Overall | 4 / 50 tasks done (46 build tasks remaining) |
+
+| Phase | Done / Total | Status |
+|---|---|---|
+| P0 Foundation | 0 / 8 | ⬜ |
+| P1 Auth & users | 0 / 7 | ⬜ |
+| P2 Catalog & config | 0 / 5 | ⬜ |
+| P3 Quotations & subscriptions | 0 / 7 | ⬜ |
+| P4 Billing & invoices | 0 / 5 | ⬜ |
+| P5 Discounts & payments | 0 / 3 | ⬜ |
+| P6 Portal, reports, settings | 0 / 5 | ⬜ |
+| P7 Hardening & demo | 0 / 6 | ⬜ |
+| Project docs | 4 / 4 | ✅ |
+
+---
+
+## Task board
+
+> Owners and slots come from `PHASES.md` (times are `T+h:mm` from the start of the build). Update **Status** and **Started / done** (e.g. `T+1:32 / T+2:01`). Details and acceptance criteria are in `PHASES.md`.
+
+### Team
+| Member | Name | Lane | Tasks |
+|---|---|---|---|
+| M1 | _(fill in)_ | Data and billing | 17 |
+| M2 | _(fill in)_ | Logic, auth and money | 17 |
+| M3 | _(fill in)_ | UI and design | 12 |
+
+### Checkpoints
+| Time | Checkpoint | Done? |
+|---|---|---|
+| T+0:20 | Scaffold pushed, everyone pulled | ⬜ |
+| T+1:30 | Phase 0 exit demo | ⬜ |
+| T+2:30 | Phase 1 exit demo | ⬜ |
+| T+3:15 | Phase 2 exit demo | ⬜ |
+| T+4:30 | Phase 3 exit demo | ⬜ |
+| T+5:45 | Phase 4 exit demo | ⬜ |
+| T+6:30 | Phase 5 exit demo | ⬜ |
+| T+7:15 | Phase 6 exit demo | ⬜ |
+| T+7:50 | Code freeze + demo dry run | ⬜ |
+
+### Project setup
+| ID | Task | Owner | Slot | Status | Started / done |
+|---|---|---|---|---|---|
+| DOC-01 | PRD, ARCHITECTURE, RULES, PHASES, DESIGN, PROGRESS written | Team | — | ✅ | 2026-10-31 |
+| DOC-02 | Decisions D-001…D-012 recorded | Team | — | ✅ | 2026-10-31 |
+| DOC-03 | Task board initialised | Team | — | ✅ | 2026-10-31 |
+| DOC-04 | Three-member lanes and 8-hour timeline added to PHASES | Team | — | ✅ | 2026-10-31 |
+
+### Phase 0 — Foundation
+| ID | Task | Owner | Slot | Status | Started / done |
+|---|---|---|---|---|---|
+| P0-01 | Scaffold monorepo | M1 | 0:00–0:20 | ⬜ | |
+| P0-02 | Local infrastructure | M1 | 0:20–0:35 | ⬜ | |
+| P0-03 | Database schema & migrations | M1 | 0:35–1:05 | ⬜ | |
+| P0-04 | API core | M2 | 0:50–1:10 | ⬜ | |
+| P0-05 | Shared package basics | M2 | 0:20–0:50 | ⬜ | |
+| P0-06 | Domain services (numbering, audit, settings, mail) | M2 | 1:10–1:30 | ⬜ | |
+| P0-07 | Web shell | M3 | 0:20–1:30 | ⬜ | |
+| P0-08 | Base seed | M1 | 1:05–1:30 | ⬜ | |
+
+### Phase 1 — Auth & users
+| ID | Task | Owner | Slot | Status | Started / done |
+|---|---|---|---|---|---|
+| P1-01 | Signup, login, refresh, logout, me | M2 | 1:30–2:00 | ⬜ | |
+| P1-02 | RBAC & ownership | M2 | 2:00–2:15 | ⬜ | |
+| P1-03 | Forgot/reset password & invites | M2 | 2:15–2:30 | ⬜ | |
+| P1-04 | Staff management | M1 | 2:00–2:30 | ⬜ | |
+| P1-05 | Customers | M1 | 1:30–2:00 | ⬜ | |
+| P1-06 | Web auth flows | M3 | 1:30–2:05 | ⬜ | |
+| P1-07 | Web users & customers pages | M3 | 2:05–2:30 | ⬜ | |
+
+### Phase 2 — Catalog & configuration
+| ID | Task | Owner | Slot | Status | Started / done |
+|---|---|---|---|---|---|
+| P2-01 | Taxes | M3 | 2:30–2:45 | ⬜ | |
+| P2-02 | Payment terms | M3 | 2:45–2:55 | ⬜ | |
+| P2-03 | Products | M1 | 2:30–2:55 | ⬜ | |
+| P2-04 | Attributes & variants | M1 | 2:55–3:15 | ⬜ | |
+| P2-05 | Plans | M3 | 2:55–3:15 | ⬜ | |
+
+### Phase 3 — Quotations & subscriptions
+| ID | Task | Owner | Slot | Status | Started / done |
+|---|---|---|---|---|---|
+| P3-01 | Pricing engine (shared) | M2 | 2:30–3:00 | ⬜ | |
+| P3-02 | State machines (shared) | M2 | 3:00–3:20 | ⬜ | |
+| P3-03 | Quotation templates | M2 | 3:20–3:50 | ⬜ | |
+| P3-04 | Subscriptions CRUD | M1 | 3:15–3:50 | ⬜ | |
+| P3-05 | Transitions, renewal, audit | M1 | 3:50–4:30 | ⬜ | |
+| P3-06 | From template | M2 | 3:50–4:05 | ⬜ | |
+| P3-07 | Subscriptions UI | M3 | 3:15–4:30 | ⬜ | |
+
+### Phase 4 — Billing & invoices
+| ID | Task | Owner | Slot | Status | Started / done |
+|---|---|---|---|---|---|
+| P4-01 | Invoice generator | M1 | 4:30–5:00 | ⬜ | |
+| P4-02 | Billing run & lifecycle jobs | M1 | 5:00–5:45 | ⬜ | |
+| P4-03 | Invoice actions | M2 | 4:30–5:05 | ⬜ | |
+| P4-04 | Invoice PDF & send | M2 | 5:05–5:45 | ⬜ | |
+| P4-05 | Invoices & billing-runs UI | M3 | 4:30–5:45 | ⬜ | |
+
+### Phase 5 — Discounts & payments
+| ID | Task | Owner | Slot | Status | Started / done |
+|---|---|---|---|---|---|
+| P5-01 | Discount rules | M2 | 4:05–4:30 | ⬜ | |
+| P5-02 | Discounts on subscriptions | M1 | 5:45–6:30 | ⬜ | |
+| P5-03 | Payments | M2 | 5:45–6:15 | ⬜ | |
+
+### Phase 6 — Portal, reports, settings
+| ID | Task | Owner | Slot | Status | Started / done |
+|---|---|---|---|---|---|
+| P6-01 | Portal API | M1 | 6:30–6:55 | ⬜ | |
+| P6-02 | Portal UI | M3 | 6:50–7:30 | ⬜ | |
+| P6-03 | Reports API | M2 | 6:15–6:45 | ⬜ | |
+| P6-04 | Finance dashboard UI | M3 | 6:05–6:50 | ⬜ | |
+| P6-05 | Settings UI | M3 | 5:45–6:05 | ⬜ | |
+
+### Phase 7 — Hardening & demo
+| ID | Task | Owner | Slot | Status | Started / done |
+|---|---|---|---|---|---|
+| P7-01 | Large seed | M1 | 6:55–7:15 | ⬜ | |
+| P7-02 | Performance pass | M1 | 7:15–7:35 | ⬜ | |
+| P7-03 | E2E tests | M2 | 7:05–7:40 | ⬜ | |
+| P7-04 | Security review | M2 | 6:45–7:05 | ⬜ | |
+| P7-05 | UX polish | M3 | 7:30–7:50 | ⬜ | |
+| P7-06 | README & demo script | M1 | 7:35–7:50 | ⬜ | |
+
+---
+
+## Work log (newest first)
+
+Entry format:
+
+```
+### YYYY-MM-DD HH:MM (IST) — <Task ID> <short title> — <M1/M2/M3 name>
+- Status: ✅ Done | 🟡 Partial | ⛔ Blocked
+- What changed: <files/modules, endpoints, migrations>
+- Tests: <what was added; lint/typecheck/test result>
+- Notes / follow-ups: <anything the next person must know>
+```
+
+### 2026-10-31 14:16 (IST) — DOC-04 Team plan — Team
+- Status: ✅ Done
+- What changed: `PHASES.md` now assigns every task to M1, M2 or M3 with a time slot on an 8-hour timeline, hard (⚑) vs soft dependencies, checkpoints and hand-offs. `RULES.md` has a Hackathon mode section. Task board here pre-filled with owners and slots. No features or tasks removed.
+- Tests: n/a
+- Notes / follow-ups: Fill in names in the Team table. M1 starts P0-01 at T+0:00.
+
+### 2026-10-31 13:47 (IST) — DOC-01 Project documents — Team
+- Status: ✅ Done
+- What changed: Created `PRD.md`, `ARCHITECTURE.md`, `RULES.md`, `PHASES.md`, `DESIGN.md`, `PROGRESS.md`.
+- Tests: n/a
+- Notes / follow-ups: Start with P0-01. Record exact package versions as D-014 when scaffolding.
+
+---
+
+## Decisions log
+
+> Format: `D-NNN · date · decision · why · affects`. Add new decisions at the bottom.
+
+| ID | Date | Decision | Why | Affects |
+|---|---|---|---|---|---|
+| D-001 | 2026-10-31 | Modular monolith: NestJS + PostgreSQL + Prisma, React/Vite SPA, pnpm monorepo with shared package | Billing correctness needs one transactional DB; shared Zod/pricing avoids client/server drift | All |
+| D-002 | 2026-10-31 | Plan price is a per-period **base fee**, added to subscriptions as a locked plan-fee line | The brief gives plans a price separate from product lines; modelling it as a line keeps the pricing engine uniform | PLAN-04, pricing |
+| D-003 | 2026-10-31 | Bill **in advance**: first invoice on activation, then one per period; no proration | Common SaaS practice; simple and predictable | INV-01 |
+| D-004 | 2026-10-31 | Idempotency via partial unique index `(subscriptionId, periodStart) WHERE status <> 'CANCELLED'` | "Nothing billed twice" is guaranteed by the DB, and cancelled periods can be regenerated | INV-03, P0-03 |
+| D-005 | 2026-10-31 | Billing periods computed from the anchor start date (`periodStart(start, period, n)`) | Prevents month-end date drift | dates.ts, billing |
+| D-006 | 2026-10-31 | No payment gateway; staff record payments with a method | Out of scope for v1; keeps the focus on billing logic | PAY |
+| D-007 | 2026-10-31 | Single currency (setting, default INR) and business time zone setting (default Asia/Kolkata) | Brightloop is one company; dates must match the business day | ADM-01 |
+| D-008 | 2026-10-31 | Discounts are attached to subscriptions; product-scope discounts apply first, then subscription-scope; one use per invoice; released on cancel | Makes "applies on its own" and usage limits precise and testable | DISC |
+| D-009 | 2026-10-31 | Overdue and quotation-expired are derived at read time, not stored states | No sync jobs to fail; always correct | INV-06, QT-03 |
+| D-010 | 2026-10-31 | Scheduler via `@nestjs/schedule` + Postgres advisory lock (no Redis/queue) | Fewer moving parts; the lock prevents concurrent runs | P4-02 |
+| D-011 | 2026-10-31 | Access JWT in memory + rotating refresh token in httpOnly cookie | Avoids XSS token theft from localStorage | AUTH |
+| D-012 | 2026-10-31 | Password rule: ≥ 9 chars ("more than eight"), upper, lower, special | Literal reading of the brief | AUTH-01 |
+| D-013 | 2026-10-31 | Three lanes (M1 data & billing, M2 logic/auth/money, M3 UI) on an 8-hour timeline; hard (⚑) vs soft dependencies; M1 sole owner of `schema.prisma`, M2 of `packages/shared` | Hackathon time box: parallel work against fixed contracts keeps full scope | PHASES, RULES |
+
+---
+
+## Blockers
+
+| Date | Task | Blocker | Owner | Resolution |
+|---|---|---|---|---|---|
+| — | — | — | — | — |
+
+## Known issues / tech debt
+
+| Date | Area | Issue | Severity | Planned fix |
+|---|---|---|---|---|---|
+| — | — | — | — | — |
+
+## Backlog (out of scope ideas — do not build without a decision)
+
+- Automated overdue reminder emails (dunning)
+- CSV export for invoices and overdue list (RPT-06 stretch)
+- ⌘K command palette
+- Online payment link (gateway) on invoices
+- Proration for mid-cycle quantity changes
+- Credit notes / refunds
+
+## Performance results (fill in during P7-02)
+
+| Endpoint / page | Dataset | p95 before | p95 after | Fix applied |
+|---|---|---|---|---|---|
+| — | — | — | — | — |

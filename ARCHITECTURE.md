@@ -1,0 +1,870 @@
+# ARCHITECTURE — Brightloop Subscription Management System
+
+> **How the system is built.** The requirements live in `PRD.md`. If you change the schema, an API contract or the folder layout, update this file in the same change.
+
+---
+
+## 1. Overview
+
+A **modular monolith**: one NestJS API, one PostgreSQL database, one React single-page app, and a shared TypeScript package that holds validation schemas, enums and the pricing engine.
+
+**Why a monolith:**
+- Billing correctness depends on database transactions, row locks and unique constraints. These are simple inside one database and painful across services.
+- The scale target (thousands of subscriptions) is far below what one Postgres instance handles.
+- Modules have strict boundaries, so any one could be extracted later.
+
+```mermaid
+flowchart LR
+  subgraph Browser
+    WEB[React SPA<br/>apps/web]
+  end
+  subgraph Server
+    API[NestJS API<br/>apps/api]
+    JOBS[Scheduled jobs<br/>@nestjs/schedule]
+    API --- JOBS
+  end
+  SHARED[(packages/shared<br/>Zod schemas · enums ·<br/>pricing engine · date/money utils)]
+  DB[(PostgreSQL 16)]
+  SMTP[SMTP<br/>Mailpit in dev]
+  WEB -- REST /api/v1 JSON --> API
+  WEB -. imports .- SHARED
+  API -. imports .- SHARED
+  API -- Prisma --> DB
+  JOBS -- Prisma + row locks --> DB
+  API -- nodemailer --> SMTP
+```
+
+## 2. Tech stack
+
+Use the **latest stable** version of each package when you scaffold, and record the exact versions in the `PROGRESS.md` Decisions log. Do not add anything outside this list without recording a decision (see `RULES.md`).
+
+| Concern | Choice | Why |
+|---|---|---|
+| Language | TypeScript (strict) everywhere | One language, shared types end to end |
+| Runtime | Node.js LTS | — |
+| Package manager | pnpm workspaces | Monorepo with a shared package |
+| Database | PostgreSQL 16 | ACID transactions, `NUMERIC`, partial unique indexes, `FOR UPDATE SKIP LOCKED`, advisory locks |
+| ORM | Prisma | Typed client and migrations. Raw SQL only where `RULES.md` allows it. |
+| API framework | NestJS | Modules, dependency injection, guards and pipes map cleanly onto the domain modules |
+| Validation | Zod (schemas in `packages/shared`) + a custom `ZodValidationPipe` | One schema for the client form and the server DTO |
+| Auth | `@nestjs/jwt` + `passport-jwt`, `argon2` | Standard and secure |
+| Rate limiting | `@nestjs/throttler` | Login and reset endpoints |
+| Security headers | `helmet` | — |
+| Scheduling | `@nestjs/schedule` (cron) + Postgres advisory lock | No Redis needed. The lock prevents double runs. |
+| Money | `decimal.js` | Never use JavaScript floats for money |
+| Dates | `dayjs` + `utc` + `timezone` plugins | Business-time-zone date math |
+| Email | `nodemailer` (Mailpit locally) | — |
+| PDF | `pdfkit` | Lightweight server-side invoice PDFs |
+| Logging | Nest `Logger` | — |
+| Frontend | React + Vite | Fast single-page app |
+| Routing | React Router | — |
+| Server state | TanStack Query | Caching, pagination, invalidation |
+| Tables | TanStack Table | Headless tables with server-side sorting and filtering |
+| Forms | React Hook Form + `@hookform/resolvers/zod` | Uses the shared schemas |
+| UI kit | Tailwind CSS + shadcn/ui (Radix) | Accessible primitives, themed via `DESIGN.md` tokens |
+| Icons | lucide-react | — |
+| Charts | Recharts | — |
+| Toasts | sonner | — |
+| Tests (API) | Jest + Supertest | Nest default |
+| Tests (web/shared) | Vitest + React Testing Library | — |
+| E2E | Playwright | Critical flows |
+| Local infrastructure | Docker Compose (Postgres + Mailpit) | — |
+
+## 3. Repository structure
+
+```
+brightloop/
+├── PRD.md  ARCHITECTURE.md  RULES.md  PHASES.md  DESIGN.md  PROGRESS.md
+├── README.md
+├── docker-compose.yml              # postgres:16, mailpit
+├── .env.example
+├── package.json                    # root scripts (dev, build, lint, test, typecheck)
+├── pnpm-workspace.yaml
+├── tsconfig.base.json
+├── .eslintrc.cjs / .prettierrc
+│
+├── packages/
+│   └── shared/
+│       ├── package.json            # name: @brightloop/shared
+│       └── src/
+│           ├── index.ts
+│           ├── enums.ts            # Role, SubscriptionStatus, InvoiceStatus, BillingPeriod, ...
+│           ├── constants.ts        # PAGE_SIZE_DEFAULT=25, PAGE_SIZE_MAX=100, password regex
+│           ├── money.ts            # Decimal helpers: d(), round2(), sum(), toMoneyString()
+│           ├── dates.ts            # periodStart(start, period, n), addPeriods(), todayInTz()
+│           ├── state/
+│           │   ├── subscription-machine.ts   # allowed transitions table + canTransition()
+│           │   └── invoice-machine.ts
+│           ├── pricing/
+│           │   ├── types.ts        # PricingInput, PricingResult
+│           │   ├── engine.ts       # priceDocument(): pure, deterministic
+│           │   └── engine.test.ts
+│           └── schemas/            # Zod: request bodies + query params, one file per module
+│               ├── auth.ts  users.ts  customers.ts  products.ts  attributes.ts
+│               ├── taxes.ts  payment-terms.ts  plans.ts  quotation-templates.ts
+│               ├── subscriptions.ts  invoices.ts  discounts.ts  payments.ts
+│               ├── reports.ts  settings.ts  common.ts   # pagination, id params, date range
+│
+├── apps/
+│   ├── api/
+│   │   ├── package.json
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma
+│   │   │   ├── migrations/         # includes raw SQL for the partial unique index
+│   │   │   ├── seed.ts             # base demo data
+│   │   │   └── seed-large.ts       # 10k subs / 50k invoices / 40k payments
+│   │   ├── src/
+│   │   │   ├── main.ts             # helmet, CORS, cookie-parser, global prefix /api/v1
+│   │   │   ├── app.module.ts
+│   │   │   ├── config/             # env schema (Zod) + typed ConfigService
+│   │   │   ├── common/
+│   │   │   │   ├── prisma/         # PrismaService (+ tx helper)
+│   │   │   │   ├── auth/           # JwtAuthGuard, RolesGuard, @Roles(), @CurrentUser(), @Public()
+│   │   │   │   ├── pipes/          # ZodValidationPipe
+│   │   │   │   ├── filters/        # HttpExceptionFilter → { error: { code, message, details } }
+│   │   │   │   ├── errors/         # DomainError(code, message, httpStatus)
+│   │   │   │   ├── pagination/     # paginate(), toPrismaOrderBy()
+│   │   │   │   ├── numbering/      # NumberingService.next('SUB' | 'INV', year)
+│   │   │   │   ├── audit/          # AuditService.log(...)
+│   │   │   │   ├── settings/       # SettingsService (cached, typed)
+│   │   │   │   ├── mail/           # MailService + templates (reset, invite, quotation, invoice)
+│   │   │   │   └── pdf/            # InvoicePdfService
+│   │   │   ├── modules/
+│   │   │   │   ├── auth/           # controller, service, jwt.strategy, tokens.service
+│   │   │   │   ├── users/          # staff management (admin)
+│   │   │   │   ├── customers/
+│   │   │   │   ├── taxes/
+│   │   │   │   ├── payment-terms/
+│   │   │   │   ├── products/       # products + variants
+│   │   │   │   ├── attributes/     # attributes + values
+│   │   │   │   ├── plans/
+│   │   │   │   ├── quotation-templates/
+│   │   │   │   ├── subscriptions/  # controller, service, transitions.service, renewal.service
+│   │   │   │   ├── discounts/      # CRUD + attach/detach + usage service
+│   │   │   │   ├── invoices/       # controller, service, invoice-generator.service, actions.service
+│   │   │   │   ├── billing/        # billing.service (run), billing.scheduler (cron), lifecycle.jobs
+│   │   │   │   ├── payments/
+│   │   │   │   ├── reports/
+│   │   │   │   ├── portal/         # customer-scoped controllers reusing services above
+│   │   │   │   └── settings/       # admin settings endpoints
+│   │   │   └── health/
+│   │   └── test/                   # e2e (supertest) + integration (billing idempotency)
+│   │
+│   └── web/
+│       ├── package.json
+│       ├── index.html
+│       ├── e2e/                    # Playwright specs
+│       └── src/
+│           ├── main.tsx  App.tsx  router.tsx
+│           ├── styles/globals.css  # DESIGN.md tokens as CSS variables
+│           ├── lib/
+│           │   ├── api-client.ts   # fetch wrapper: base URL, bearer token, 401→refresh→retry, error parsing
+│           │   ├── query-client.ts
+│           │   ├── format.ts       # formatMoney(), formatDate(), formatPeriod()
+│           │   └── utils.ts        # cn()
+│           ├── auth/               # AuthProvider, useAuth, RequireAuth, RequireRole
+│           ├── components/
+│           │   ├── ui/             # shadcn generated components
+│           │   ├── layout/         # AppLayout (sidebar), PortalLayout (top nav), PageHeader
+│           │   ├── data-table/     # DataTable with server pagination/sort, URL-synced filters
+│           │   ├── form/           # FormField wrappers, MoneyInput, DatePicker, EntityCombobox
+│           │   ├── status-badge.tsx
+│           │   ├── status-bar.tsx  # lifecycle stepper for subscriptions/invoices
+│           │   ├── money.tsx       # <Money value="1234.50" />
+│           │   ├── kpi-card.tsx
+│           │   ├── empty-state.tsx
+│           │   └── confirm-dialog.tsx
+│           └── features/           # one folder per module: api.ts (hooks), pages/, components/
+│               ├── auth/  dashboard/  customers/  users/  products/  attributes/
+│               ├── taxes/  payment-terms/  plans/  quotation-templates/
+│               ├── subscriptions/  invoices/  discounts/  payments/
+│               ├── billing-runs/  settings/
+│               └── portal/
+```
+
+Module dependency direction (no cycles):
+`common` ← `auth, users, customers, taxes, payment-terms, attributes, products, plans` ← `quotation-templates, discounts` ← `subscriptions` ← `invoices` ← `billing, payments` ← `reports, portal`.
+
+## 4. Backend modules
+
+| Module | Owns | Key rules |
+|---|---|---|
+| auth | Signup, login, refresh, logout, me, forgot/reset, invite acceptance | Generic login errors; token hashes only; throttled |
+| users | Staff CRUD and deactivation | Admin only |
+| customers | Customer profiles and invites | Admin and Staff |
+| taxes | Tax CRUD | Admin write |
+| payment-terms | Payment term CRUD | Admin write |
+| attributes | Attributes and values with price extras | Admin write |
+| products | Products, default taxes, variants | Default variant auto-created; archive instead of delete |
+| plans | Plan CRUD and availability check | `isAvailable(plan, date)` helper |
+| quotation-templates | Templates and lines | Admin and Staff |
+| subscriptions | CRUD, lines, plan-fee line sync, transitions, renewal, attach/detach discount | All status changes go through `TransitionsService`, which uses the shared machine |
+| discounts | Discount CRUD, eligibility, usage reserve/release | Usage changes only inside the invoice transaction |
+| invoices | Generator, actions (confirm, cancel, send, regenerate), PDF | Snapshot lines; idempotent |
+| billing | Billing run, lifecycle jobs, run log | Advisory lock; one transaction per subscription |
+| payments | Record and delete payments, update invoice paid state | Row-lock the invoice while paying |
+| reports | KPIs, series, overdue | Aggregate SQL only |
+| portal | Customer-scoped endpoints | Always filter by `customerId` from the JWT |
+| settings | Typed key/value settings | Admin write; cached in memory, invalidated on write |
+
+## 5. Data model (Prisma)
+
+This is the canonical schema. Adapt syntax to the installed Prisma version, but keep the names.
+
+```prisma
+generator client { provider = "prisma-client-js" }
+datasource db   { provider = "postgresql"; url = env("DATABASE_URL") }
+
+enum Role               { ADMIN STAFF CUSTOMER }
+enum AuthTokenType      { PASSWORD_RESET INVITE }
+enum ProductType        { SERVICE GOODS }
+enum BillingPeriod      { DAILY WEEKLY MONTHLY YEARLY }
+enum SubscriptionStatus { DRAFT QUOTATION CONFIRMED ACTIVE PAUSED CLOSED }
+enum InvoiceStatus      { DRAFT CONFIRMED PAID CANCELLED }
+enum DiscountType       { FIXED PERCENTAGE }
+enum DiscountScope      { PRODUCTS SUBSCRIPTION }
+enum PaymentMethod      { BANK_TRANSFER UPI CARD CASH CHEQUE OTHER }
+enum BillingRunTrigger  { SCHEDULED MANUAL }
+
+model User {
+  id               String         @id @default(uuid()) @db.Uuid
+  email            String         @unique              // trimmed + lower-cased
+  passwordHash     String?                             // null until invite accepted
+  name             String
+  role             Role
+  isActive         Boolean        @default(true)
+  lastLoginAt      DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  customer         Customer?
+  refreshTokens    RefreshToken[]
+  authTokens       AuthToken[]
+  paymentsRecorded Payment[]
+  @@index([role])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  @@index([userId])
+}
+
+model AuthToken {
+  id        String        @id @default(uuid()) @db.Uuid
+  userId    String        @db.Uuid
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      AuthTokenType
+  tokenHash String        @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+}
+
+model Customer {
+  id             String         @id @default(uuid()) @db.Uuid
+  userId         String         @unique @db.Uuid
+  user           User           @relation(fields: [userId], references: [id])
+  companyName    String?
+  phone          String?
+  billingAddress String?
+  taxId          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  subscriptions  Subscription[]
+  invoices       Invoice[]
+}
+
+model Tax {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String             @unique
+  rate              Decimal            @db.Decimal(5, 2)   // percent
+  description       String?
+  isActive          Boolean            @default(true)
+  products          Product[]          @relation("ProductTaxes")
+  subscriptionLines SubscriptionLine[] @relation("SubscriptionLineTaxes")
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+model PaymentTerm {
+  id            String              @id @default(uuid()) @db.Uuid
+  name          String              @unique             // "Immediate", "Net 15", "Net 30"
+  dueDays       Int
+  isActive      Boolean             @default(true)
+  subscriptions Subscription[]
+  templates     QuotationTemplate[]
+}
+
+model Product {
+  id         String           @id @default(uuid()) @db.Uuid
+  name       String
+  type       ProductType
+  salesPrice Decimal          @db.Decimal(12, 2)
+  costPrice  Decimal          @db.Decimal(12, 2)
+  notes      String?
+  isActive   Boolean          @default(true)
+  taxes      Tax[]            @relation("ProductTaxes")
+  variants   ProductVariant[]
+  discounts  Discount[]       @relation("DiscountProducts")
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  @@index([name])
+}
+
+model ProductAttribute {
+  id     String           @id @default(uuid()) @db.Uuid
+  name   String           @unique                 // "Brand"
+  values AttributeValue[]
+}
+
+model AttributeValue {
+  id          String                  @id @default(uuid()) @db.Uuid
+  attributeId String                  @db.Uuid
+  attribute   ProductAttribute        @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  name        String                  // "Odoo"
+  priceExtra  Decimal                 @default(0) @db.Decimal(12, 2)   // 560
+  variants    VariantAttributeValue[]
+  @@unique([attributeId, name])
+}
+
+model ProductVariant {
+  id                String                  @id @default(uuid()) @db.Uuid
+  productId         String                  @db.Uuid
+  product           Product                 @relation(fields: [productId], references: [id])
+  name              String                  // "Default" or "Odoo"
+  priceExtra        Decimal                 @default(0) @db.Decimal(12, 2)
+  isDefault         Boolean                 @default(false)
+  isActive          Boolean                 @default(true)
+  attributeValues   VariantAttributeValue[]
+  subscriptionLines SubscriptionLine[]
+  templateLines     QuotationTemplateLine[]
+  invoiceLines      InvoiceLine[]
+  @@index([productId])
+}
+
+model VariantAttributeValue {
+  variantId        String         @db.Uuid
+  attributeValueId String         @db.Uuid
+  variant          ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  attributeValue   AttributeValue @relation(fields: [attributeValueId], references: [id])
+  @@id([variantId, attributeValueId])
+}
+
+model Plan {
+  id             String              @id @default(uuid()) @db.Uuid
+  name           String
+  price          Decimal             @db.Decimal(12, 2)   // base fee per period
+  billingPeriod  BillingPeriod
+  minQuantity    Int                 @default(1)
+  availableFrom  DateTime?           @db.Date
+  availableUntil DateTime?           @db.Date
+  autoClose      Boolean             @default(false)
+  closable       Boolean             @default(true)
+  pausable       Boolean             @default(false)
+  renewable      Boolean             @default(true)
+  isActive       Boolean             @default(true)
+  subscriptions  Subscription[]
+  templates      QuotationTemplate[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model QuotationTemplate {
+  id            String                  @id @default(uuid()) @db.Uuid
+  name          String
+  validityDays  Int
+  planId        String                  @db.Uuid
+  plan          Plan                    @relation(fields: [planId], references: [id])
+  paymentTermId String?                 @db.Uuid
+  paymentTerm   PaymentTerm?            @relation(fields: [paymentTermId], references: [id])
+  notes         String?
+  isActive      Boolean                 @default(true)
+  lines         QuotationTemplateLine[]
+  subscriptions Subscription[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+}
+
+model QuotationTemplateLine {
+  id         String            @id @default(uuid()) @db.Uuid
+  templateId String            @db.Uuid
+  template   QuotationTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  variantId  String            @db.Uuid
+  variant    ProductVariant    @relation(fields: [variantId], references: [id])
+  quantity   Int
+  unitPrice  Decimal?          @db.Decimal(12, 2)   // override; null = variant price
+  sequence   Int               @default(0)
+}
+
+model Subscription {
+  id                  String                 @id @default(uuid()) @db.Uuid
+  number              String                 @unique          // SUB/2026/00001
+  customerId          String                 @db.Uuid
+  customer            Customer               @relation(fields: [customerId], references: [id])
+  planId              String                 @db.Uuid
+  plan                Plan                   @relation(fields: [planId], references: [id])
+  status              SubscriptionStatus     @default(DRAFT)
+  startDate           DateTime               @db.Date
+  expiryDate          DateTime?              @db.Date
+  paymentTermId       String                 @db.Uuid
+  paymentTerm         PaymentTerm            @relation(fields: [paymentTermId], references: [id])
+  quotationTemplateId String?                @db.Uuid
+  quotationTemplate   QuotationTemplate?     @relation(fields: [quotationTemplateId], references: [id])
+  quotationExpiresAt  DateTime?              @db.Date
+  billingCycleIndex   Int                    @default(0)      // periods already billed
+  nextBillingDate     DateTime?              @db.Date
+  confirmedAt         DateTime?
+  activatedAt         DateTime?
+  pausedAt            DateTime?
+  closedAt            DateTime?
+  closeReason         String?
+  parentId            String?                @unique @db.Uuid // renewal of (renew once)
+  parent              Subscription?          @relation("Renewal", fields: [parentId], references: [id])
+  renewal             Subscription?          @relation("Renewal")
+  notes               String?
+  lines               SubscriptionLine[]
+  discounts           SubscriptionDiscount[]
+  invoices            Invoice[]
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  @@index([status])
+  @@index([customerId, status])
+  @@index([status, nextBillingDate])
+  @@index([planId])
+  @@index([expiryDate])
+}
+
+model SubscriptionLine {
+  id             String          @id @default(uuid()) @db.Uuid
+  subscriptionId String          @db.Uuid
+  subscription   Subscription    @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  variantId      String?         @db.Uuid                 // null for plan-fee line
+  variant        ProductVariant? @relation(fields: [variantId], references: [id])
+  description    String
+  quantity       Int
+  unitPrice      Decimal         @db.Decimal(12, 2)
+  isPlanFee      Boolean         @default(false)
+  sequence       Int             @default(0)
+  taxes          Tax[]           @relation("SubscriptionLineTaxes")
+  @@index([subscriptionId])
+}
+
+model Discount {
+  id            String                 @id @default(uuid()) @db.Uuid
+  name          String
+  code          String?                @unique
+  type          DiscountType
+  value         Decimal                @db.Decimal(12, 2)
+  scope         DiscountScope
+  minPurchase   Decimal?               @db.Decimal(12, 2)
+  minQuantity   Int?
+  startDate     DateTime               @db.Date
+  endDate       DateTime               @db.Date
+  usageLimit    Int?
+  usageCount    Int                    @default(0)
+  isActive      Boolean                @default(true)
+  products      Product[]              @relation("DiscountProducts")
+  subscriptions SubscriptionDiscount[]
+  usages        DiscountUsage[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+}
+
+model SubscriptionDiscount {
+  subscriptionId String       @db.Uuid
+  discountId     String       @db.Uuid
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  discount       Discount     @relation(fields: [discountId], references: [id])
+  createdAt      DateTime     @default(now())          // stacking order
+  @@id([subscriptionId, discountId])
+}
+
+model DiscountUsage {
+  id         String   @id @default(uuid()) @db.Uuid
+  discountId String   @db.Uuid
+  discount   Discount @relation(fields: [discountId], references: [id])
+  invoiceId  String   @db.Uuid
+  invoice    Invoice  @relation(fields: [invoiceId], references: [id])
+  amount     Decimal  @db.Decimal(12, 2)
+  createdAt  DateTime @default(now())
+  @@unique([discountId, invoiceId])
+}
+
+model Invoice {
+  id                String          @id @default(uuid()) @db.Uuid
+  number            String          @unique               // INV/2026/00001
+  customerId        String          @db.Uuid
+  customer          Customer        @relation(fields: [customerId], references: [id])
+  subscriptionId    String?         @db.Uuid
+  subscription      Subscription?   @relation(fields: [subscriptionId], references: [id])
+  status            InvoiceStatus   @default(DRAFT)
+  invoiceDate       DateTime        @db.Date
+  dueDate           DateTime        @db.Date
+  periodStart       DateTime?       @db.Date
+  periodEnd         DateTime?       @db.Date              // exclusive
+  customerSnapshot  Json            // { name, email, companyName, billingAddress, taxId }
+  currency          String
+  subtotal          Decimal         @db.Decimal(12, 2)
+  discountTotal     Decimal         @db.Decimal(12, 2)
+  taxTotal          Decimal         @db.Decimal(12, 2)
+  total             Decimal         @db.Decimal(12, 2)
+  amountPaid        Decimal         @default(0) @db.Decimal(12, 2)
+  confirmedAt       DateTime?
+  paidAt            DateTime?
+  cancelledAt       DateTime?
+  cancelReason      String?
+  sentAt            DateTime?
+  regeneratedFromId String?         @db.Uuid
+  lines             InvoiceLine[]
+  payments          Payment[]
+  discountUsages    DiscountUsage[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  @@index([status, dueDate])
+  @@index([customerId, status])
+  @@index([subscriptionId])
+  @@index([invoiceDate])
+}
+// Raw SQL in a migration (Prisma cannot express partial indexes):
+// CREATE UNIQUE INDEX "Invoice_subscription_period_active_key"
+//   ON "Invoice" ("subscriptionId", "periodStart") WHERE "status" <> 'CANCELLED';
+
+model InvoiceLine {
+  id             String          @id @default(uuid()) @db.Uuid
+  invoiceId      String          @db.Uuid
+  invoice        Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  variantId      String?         @db.Uuid
+  variant        ProductVariant? @relation(fields: [variantId], references: [id])
+  description    String
+  quantity       Int
+  unitPrice      Decimal         @db.Decimal(12, 2)
+  subtotal       Decimal         @db.Decimal(12, 2)   // qty × unitPrice
+  discountAmount Decimal         @db.Decimal(12, 2)
+  taxAmount      Decimal         @db.Decimal(12, 2)
+  total          Decimal         @db.Decimal(12, 2)   // subtotal − discount + tax
+  taxes          Json            // [{ taxId, name, rate, amount }]
+  discounts      Json            // [{ discountId, name, amount }]
+  sequence       Int             @default(0)
+}
+
+model Payment {
+  id           String        @id @default(uuid()) @db.Uuid
+  invoiceId    String        @db.Uuid
+  invoice      Invoice       @relation(fields: [invoiceId], references: [id])
+  method       PaymentMethod
+  amount       Decimal       @db.Decimal(12, 2)
+  paymentDate  DateTime      @db.Date
+  note         String?
+  recordedById String        @db.Uuid
+  recordedBy   User          @relation(fields: [recordedById], references: [id])
+  createdAt    DateTime      @default(now())
+  @@index([invoiceId])
+  @@index([paymentDate])
+}
+
+model Sequence {
+  key   String @id          // "SUB-2026", "INV-2026"
+  value Int
+}
+
+model BillingRun {
+  id                     String            @id @default(uuid()) @db.Uuid
+  trigger                BillingRunTrigger
+  triggeredById          String?           @db.Uuid
+  runDate                DateTime          @db.Date
+  startedAt              DateTime          @default(now())
+  finishedAt             DateTime?
+  subscriptionsProcessed Int               @default(0)
+  invoicesCreated        Int               @default(0)
+  activated              Int               @default(0)
+  closed                 Int               @default(0)
+  failures               Json              @default("[]")   // [{ subscriptionId, number, error }]
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @db.Uuid           // null = system job
+  actorRole  Role?
+  entityType String                      // "Subscription" | "Invoice" | "Payment" | ...
+  entityId   String
+  action     String                      // "created" | "transition:confirm" | "payment:recorded" ...
+  fromStatus String?
+  toStatus   String?
+  meta       Json?
+  createdAt  DateTime @default(now())
+  @@index([entityType, entityId, createdAt])
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+```
+
+**Money and dates over the wire:**
+- Money is sent and received as **strings** with 2 decimal places (`"1560.00"`).
+- Business dates are `"YYYY-MM-DD"`.
+- Timestamps are ISO-8601 in UTC.
+
+## 6. Key flows
+
+### 6.1 Signup, login, refresh
+1. `POST /auth/signup`: validate with the shared schema, check the email is unique, hash with argon2id, create `User` + `Customer` in one transaction, and return the same response as login.
+2. `POST /auth/login`: verify credentials, then issue an **access JWT** (15 minutes, payload `{ sub, role, customerId? }`) in the response body and a **refresh token** (random 32 bytes, 7 days) as an httpOnly, `SameSite=Lax` cookie on path `/api/v1/auth`. Only the SHA-256 hash of the refresh token is stored.
+3. The web app keeps the access token **in memory**. On a 401, `api-client` calls `POST /auth/refresh` once; this rotates the token (revokes the old one, issues a new one), then retries the request. If refresh fails, the user is logged out.
+4. On app load, the app calls `POST /auth/refresh` to restore the session.
+
+### 6.2 Password reset and invite
+- Generate a random token, store `AuthToken{type, tokenHash, expiresAt}`, and email `${WEB_URL}/reset-password?token=...` (or `/accept-invite?token=...`).
+- On submit: find a token by hash that is unused and not expired, set the password, set `usedAt`, and revoke the user's refresh tokens. All of this happens in one transaction.
+
+### 6.3 Quotation → subscription
+1. Staff clicks **New from template**: `POST /subscriptions/from-template` copies the template into a DRAFT subscription and syncs the plan-fee line.
+2. Staff edits the customer, dates and lines. `GET /subscriptions/:id/preview` (or client-side `priceDocument`) shows the live totals.
+3. `POST /subscriptions/:id/send` → QUOTATION, sets `quotationExpiresAt`, and emails the customer.
+4. The customer clicks **Accept** in the portal (`POST /portal/subscriptions/:id/accept`), or staff clicks **Confirm** → CONFIRMED.
+5. Activation, either `POST /subscriptions/:id/activate` or the daily job when `startDate ≤ today` → ACTIVE, followed immediately by `InvoiceGenerator.generateDue(subscriptionId)`.
+
+Every transition goes through `TransitionsService.apply(subId, action, actor, payload)`, which:
+1. Loads the subscription `FOR UPDATE`.
+2. Checks `canTransition(status, action, actorRole, plan)` from `packages/shared/state/subscription-machine.ts`.
+3. Runs that action's side effects.
+4. Writes the `AuditLog` entry.
+
+All of this is one transaction.
+
+### 6.4 Billing period math (no drift)
+`periodStart(n) = addPeriods(startDate, billingPeriod, n)` is always computed **from the anchor `startDate`**, never by adding to the previous period. With dayjs month math, the 31st clamps to the 28th, 29th or 30th but returns to the 31st in later months.
+
+```
+periodEnd(n)    = periodStart(n + 1)          // exclusive
+nextBillingDate = periodStart(billingCycleIndex)
+```
+
+### 6.5 Billing run (idempotent)
+
+```
+runBilling(trigger, actor?):
+  if !pg_try_advisory_lock(BILLING_LOCK_KEY): return "already running"
+  run = BillingRun.create(...)
+  today = todayInTz(settings.timezone)
+  1. activateDue: for CONFIRMED subs with startDate ≤ today → TransitionsService.apply(activate, SYSTEM)
+  2. dueIds = SELECT id FROM "Subscription"
+                WHERE status='ACTIVE' AND "nextBillingDate" <= today
+                  AND ("expiryDate" IS NULL OR "nextBillingDate" < "expiryDate")
+                ORDER BY "nextBillingDate" LIMIT 500        -- loop until empty
+     for each id (own try/catch):
+       tx:
+         sub = SELECT ... WHERE id = $1 AND status='ACTIVE' FOR UPDATE SKIP LOCKED   -- skip if locked
+         while sub.nextBillingDate <= today and (no expiry or nextBillingDate < expiry):
+            InvoiceGenerator.createForPeriod(tx, sub, n = sub.billingCycleIndex)
+            sub.billingCycleIndex += 1
+            sub.nextBillingDate = periodStart(sub.billingCycleIndex)
+         save sub
+       on error: push { subscriptionId, number, error } to run.failures; continue
+  3. closeExpired: ACTIVE subs with expiryDate ≤ today AND (plan.autoClose OR renewal exists) → close("Expired")
+  finish run; pg_advisory_unlock
+```
+
+`InvoiceGenerator.createForPeriod(tx, sub, n)`:
+1. Load the lines with their taxes and the attached discounts (ordered by `SubscriptionDiscount.createdAt`). Lock the discount rows with `SELECT ... FOR UPDATE`.
+2. `result = priceDocument({ lines, discounts, invoiceDate: periodStart(n) })`. This only considers discounts that are eligible and have usage remaining.
+3. `number = NumberingService.next('INV', year)` (uses `UPDATE "Sequence" ... RETURNING` inside the transaction).
+4. Insert the `Invoice` (status CONFIRMED or DRAFT according to the `autoConfirmInvoices` setting) and its `InvoiceLine`s from the snapshot.
+5. For each discount with amount > 0, insert a `DiscountUsage` and increment `usageCount`.
+6. `AuditLog("Invoice", id, "generated")`.
+
+If the partial unique index raises a conflict (P2002 or `23505`), the invoice for that period already exists. Treat this as **already billed**: advance the cursor and do not fail.
+
+### 6.6 Pricing engine (`packages/shared/src/pricing/engine.ts`)
+
+This is a pure, deterministic function with no I/O. The API is authoritative; the web app uses the same function only for previews.
+
+```ts
+priceDocument(input: {
+  lines: { key: string; productId: string | null; isPlanFee: boolean;
+           quantity: number; unitPrice: string; taxes: { id: string; name: string; rate: string }[] }[];
+  discounts: { id: string; name: string; type: 'FIXED'|'PERCENTAGE'; value: string;
+               scope: 'PRODUCTS'|'SUBSCRIPTION'; productIds: string[];
+               minPurchase: string | null; minQuantity: number | null;
+               startDate: string; endDate: string; usageLimit: number | null; usageCount: number;
+               isActive: boolean }[];              // already in stacking order
+  invoiceDate: string;                            // YYYY-MM-DD
+}): PricingResult
+```
+
+Algorithm (all arithmetic in `Decimal`, rounding `ROUND_HALF_UP` to 2 decimal places at each step marked ⓡ):
+1. For each line, `subtotal = qty × unitPrice` ⓡ, and `net = subtotal`.
+2. Drop discounts that are inactive, outside their dates, or used up.
+3. **PRODUCTS-scope** discounts, in order. A line matches when it is not a plan-fee line and its `productId` is in `productIds`.
+   - Eligible if `minPurchase ≤ Σ subtotal(matching)` and, per line, `minQuantity ≤ line.qty`.
+   - PERCENTAGE: `amt = net × value / 100` ⓡ.
+   - FIXED: `amt = min(value, net)`.
+   - `net -= amt`, and record the amount against that line and discount.
+4. **SUBSCRIPTION-scope** discounts, in order.
+   - Eligible if `Σ qty(non-plan-fee lines) ≥ minQuantity` and `Σ subtotal(all lines) ≥ minPurchase`.
+   - `base = Σ net`. PERCENTAGE: `amt = base × value / 100` ⓡ. FIXED: `amt = min(value, base)`.
+   - Allocate `amt` across lines in proportion to `net` ⓡ, and put any rounding remainder on the line with the largest `net`. Subtract from each line's `net`.
+5. Taxes, per line and per tax: `tax = net × rate / 100` ⓡ. `lineTax = Σ taxes`.
+6. Line `total = net + lineTax`. Document totals: `subtotal = Σ subtotal`, `discountTotal = Σ (subtotal − net)`, `taxTotal = Σ lineTax`, `total = Σ line totals`.
+7. Return the per-line breakdown plus `appliedDiscounts: [{ id, name, amount }]` (amount > 0 only).
+
+Required unit tests: the 560 variant example, percentage and fixed discounts at each scope, minimum quantity and minimum purchase thresholds, a used-up discount, an expired discount, stacking order, proportional allocation remainder, multiple taxes, zero-price lines, and rounding of half cents.
+
+### 6.7 Payment
+
+`POST /invoices/:id/payments`, in one transaction:
+1. Lock the invoice `FOR UPDATE` and require `status = CONFIRMED`.
+2. Require `amount ≤ total − amountPaid`.
+3. Insert the `Payment` and add to `amountPaid`.
+4. If `amountPaid = total`, set status PAID and `paidAt`.
+5. Write the audit entry.
+
+Deleting a payment (Admin) reverses these steps.
+
+### 6.8 Reports
+
+All KPIs come from aggregate SQL (`$queryRaw` with tagged templates), never from loading rows. For example:
+
+```sql
+-- outstanding & overdue
+SELECT COUNT(*) FILTER (WHERE "dueDate" < $today) AS overdue_count,
+       COALESCE(SUM("total" - "amountPaid") FILTER (WHERE "dueDate" < $today),0) AS overdue_amount,
+       COALESCE(SUM("total" - "amountPaid"),0) AS outstanding
+FROM "Invoice" WHERE status = 'CONFIRMED';
+```
+
+The revenue series is `date_trunc('month', "paymentDate")` grouped over the last 12 months. MRR joins ACTIVE subscriptions → lines → plan and applies a `CASE` on `billingPeriod` (see PRD RPT-05).
+
+## 7. API
+
+### 7.1 Conventions
+- Base path `/api/v1`, JSON only, kebab-case plural resource names.
+- Auth: `Authorization: Bearer <access>`. Every route requires auth unless it is marked `@Public()`.
+- **List response:** `{ data: T[], meta: { page, pageSize, total } }`. Query parameters: `page`, `pageSize` (≤ 100), `sort=field:asc|desc`, `q` (search), plus module filters.
+- **Error response:** `{ error: { code: "UPPER_SNAKE", message: "Human readable", details?: {...} } }`. Status codes: 400 validation (`details` = Zod issues by field), 401, 403, 404, 409 conflict / invalid transition, 422 business rule, 429 throttled.
+- Actions are verbs on the resource: `POST /subscriptions/:id/confirm`.
+
+### 7.2 Endpoint catalogue
+
+| Area | Method & path | Roles |
+|---|---|---|
+| Auth | `POST /auth/signup` · `POST /auth/login` · `POST /auth/refresh` · `POST /auth/logout` · `POST /auth/forgot-password` · `POST /auth/reset-password` · `POST /auth/accept-invite` | public |
+| | `GET /auth/me` · `POST /auth/change-password` | any |
+| Users | `GET /users` · `POST /users` (staff) · `PATCH /users/:id` (name, isActive) | A |
+| Customers | `GET /customers` · `POST /customers` · `GET /customers/:id` · `PATCH /customers/:id` · `POST /customers/:id/resend-invite` | A, S |
+| Taxes | `GET /taxes` (A, S) · `POST /taxes` · `PATCH /taxes/:id` (A) | |
+| Payment terms | `GET /payment-terms` (A, S) · `POST` · `PATCH /:id` (A) | |
+| Attributes | `GET /attributes` (A, S) · `POST /attributes` · `PATCH /attributes/:id` · `POST /attributes/:id/values` · `PATCH /attribute-values/:id` (A) | |
+| Products | `GET /products` · `GET /products/:id` (A, S) · `POST /products` · `PATCH /products/:id` (A) | |
+| Variants | `GET /products/:id/variants` (A, S) · `POST /products/:id/variants` · `PATCH /variants/:id` (A) · `GET /variants?q=` picker (A, S) | |
+| Plans | `GET /plans` · `GET /plans/:id` (A, S) · `POST /plans` · `PATCH /plans/:id` (A) | |
+| Quotation templates | `GET` · `POST` · `GET /:id` · `PATCH /:id` (replaces lines) | A, S |
+| Subscriptions | `GET /subscriptions` (filters: status, customerId, planId, q; returns status counts in `meta.counts`) · `POST /subscriptions` · `POST /subscriptions/from-template` · `GET /subscriptions/:id` · `PATCH /subscriptions/:id` · `GET /subscriptions/:id/preview` · `GET /subscriptions/:id/history` | A, S |
+| Transitions | `POST /subscriptions/:id/{send,revert,confirm,cancel,activate,pause,resume,close,renew}` | A, S |
+| Sub discounts | `POST /subscriptions/:id/discounts` `{discountId}` · `DELETE /subscriptions/:id/discounts/:discountId` | A, S |
+| Discounts | `GET /discounts` · `GET /discounts/:id` (A, S) · `POST` · `PATCH /:id` (A) | |
+| Invoices | `GET /invoices` (filters: status, view=paid\|outstanding\|overdue, customerId, subscriptionId, from, to, q) · `GET /invoices/:id` · `GET /invoices/:id/pdf` · `POST /invoices/:id/{confirm,cancel,send,regenerate}` · `POST /invoices/confirm-bulk` `{ids}` | A, S |
+| Payments | `GET /payments` · `POST /invoices/:id/payments` (A, S) · `DELETE /payments/:id` `{reason}` (A) | |
+| Billing | `POST /billing/run` (A) · `GET /billing/runs` (A, S) | |
+| Reports | `GET /reports/summary?from&to&planId&customerId` · `GET /reports/revenue-series` · `GET /reports/subscriptions-by-status` · `GET /reports/overdue` (paginated) | A, S |
+| Settings | `GET /settings` (A, S) · `PATCH /settings` (A) | |
+| Portal | `GET /portal/home` · `GET /portal/subscriptions` · `GET /portal/subscriptions/:id` · `POST /portal/subscriptions/:id/{accept,decline,pause,resume,close,renew}` · `GET /portal/invoices` · `GET /portal/invoices/:id` · `GET /portal/invoices/:id/pdf` · `GET /portal/profile` · `PATCH /portal/profile` | C |
+| Health | `GET /health` | public |
+
+## 8. Frontend architecture
+
+**Routes**
+
+| Path | Layout | Roles |
+|---|---|---|
+| `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/accept-invite` | AuthLayout (split screen) | public |
+| `/app/dashboard` | AppLayout | A, S |
+| `/app/subscriptions`, `/app/subscriptions/new`, `/app/subscriptions/:id` | AppLayout | A, S |
+| `/app/invoices`, `/app/invoices/:id`, `/app/payments` | AppLayout | A, S |
+| `/app/customers`, `/app/customers/:id` | AppLayout | A, S |
+| `/app/quotation-templates` (+ `/:id`) | AppLayout | A, S |
+| `/app/catalog/products` (+ `/:id` with Variants tab), `/app/catalog/plans`, `/app/catalog/attributes` | AppLayout | A (S read-only) |
+| `/app/config/taxes`, `/app/config/payment-terms`, `/app/config/discounts` | AppLayout | A (S read-only) |
+| `/app/admin/users`, `/app/admin/billing-runs`, `/app/admin/settings` | AppLayout | A |
+| `/portal`, `/portal/subscriptions/:id`, `/portal/invoices`, `/portal/invoices/:id`, `/portal/profile` | PortalLayout | C |
+
+**Patterns**
+- **Data:** each feature has an `api.ts` that exports TanStack Query hooks (`useSubscriptions(params)`, `useSubscription(id)`, `useTransitionSubscription()`). Query keys look like `['subscriptions', params]`. Mutations invalidate the related keys.
+- **Lists:** `DataTable` reads and writes `page`, `pageSize`, `sort`, `q` and filters from the URL search parameters, and uses `keepPreviousData` for smooth paging.
+- **Forms:** React Hook Form with `zodResolver(sharedSchema)`. Server 400 `details` are mapped back onto field errors.
+- **Auth:** `AuthProvider` holds `{ user, accessToken }` in memory. `RequireAuth` and `RequireRole` wrap route groups. The sidebar is filtered by role.
+- **Money and dates:** always render through `<Money>` and `formatDate()`. Never format inline.
+- **Permissions in the UI:** show only the actions the shared state machine allows for this role, status and plan. The server re-checks.
+
+## 9. Scheduled jobs
+
+| Job | Cron (BUSINESS_TZ) | Does |
+|---|---|---|
+| Daily billing run | `30 0 * * *` | Activate due subscriptions → generate due invoices → close expired subscriptions. Writes a `BillingRun` row. |
+
+- `CRON_ENABLED=false` disables the job (for tests and secondary instances).
+- Admin **Run billing now** calls the same `runBilling('MANUAL')`.
+- `pg_try_advisory_lock` guarantees a single concurrent run.
+- Quotation expiry and overdue status are **derived at read time**, so there is no job for them.
+
+## 10. Configuration (`.env.example`)
+
+```
+# api
+DATABASE_URL=postgresql://brightloop:brightloop@localhost:5432/brightloop
+PORT=4000
+WEB_URL=http://localhost:5173
+JWT_ACCESS_SECRET=change-me
+JWT_REFRESH_SECRET=change-me-too
+JWT_ACCESS_TTL=15m
+REFRESH_TTL_DAYS=7
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_USER=
+SMTP_PASS=
+MAIL_FROM="Brightloop Billing <billing@brightloop.local>"
+CRON_ENABLED=true
+SEED_ADMIN_EMAIL=admin@brightloop.local
+SEED_ADMIN_PASSWORD=Admin@12345
+# web
+VITE_API_URL=http://localhost:4000/api/v1
+```
+
+The business time zone and currency live in the `Setting` table, not in environment variables. The API validates the environment with Zod at boot and fails fast if anything is invalid.
+
+## 11. Performance strategy (< 2 s pages)
+- Every list is paginated server-side and selects only the columns the table shows (`select`, not full `include`).
+- The indexes in §5 cover every list filter and sort: status, customer, next billing date, due date, invoice date, payment date.
+- Status counts come from one `GROUP BY status` query.
+- Dashboard KPIs are 3–4 aggregate queries run in parallel with `Promise.all`.
+- No N+1 queries: use Prisma `include`/`select` or one batched query.
+- Search (`q`) uses `ILIKE` on number and customer name, plus a `pg_trgm` GIN index if `EXPLAIN` shows sequential scans at 10k rows.
+- Verify with `seed-large.ts` and `EXPLAIN ANALYZE` on the slowest endpoints (Phase 7).
+
+## 12. Testing strategy
+
+| Layer | What | Tool |
+|---|---|---|
+| Unit | Pricing engine, period math, state machines, password rule, money helpers | Vitest (shared) |
+| Integration | Invoice generator and billing run against a real Postgres (idempotency: run twice → same invoices; catch-up; expiry; pause skip; discount usage limit under concurrency) | Jest + test DB |
+| API e2e | Auth, RBAC matrix (each role × key endpoints), portal isolation (404 on foreign IDs) | Jest + Supertest |
+| UI e2e | Signup → login; quote → subscription → activate → invoice → payment; dashboard loads | Playwright |
+
+## 13. Local development
+
+```
+docker compose up -d            # postgres :5432, mailpit SMTP :1025 / UI :8025
+pnpm install
+pnpm db:migrate                 # prisma migrate dev
+pnpm db:seed                    # base demo data
+pnpm dev                        # api :4000 + web :5173 in parallel
+pnpm db:seed:large              # optional: performance dataset
+pnpm test | pnpm lint | pnpm typecheck | pnpm e2e
+```
