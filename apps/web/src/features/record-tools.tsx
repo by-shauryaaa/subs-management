@@ -28,6 +28,7 @@ export function EntitySelect({
   name,
   label,
   value,
+  defaultValue,
   onChange,
   required = false,
   disabled = false,
@@ -36,6 +37,7 @@ export function EntitySelect({
   name: string;
   label: string;
   value?: string;
+  defaultValue?: string;
   onChange?: (id: string) => void;
   required?: boolean;
   disabled?: boolean;
@@ -70,6 +72,7 @@ export function EntitySelect({
           name={name}
           required={required}
           value={value}
+          defaultValue={defaultValue}
           onChange={(event) => onChange?.(event.target.value)}
           disabled={disabled}
         >

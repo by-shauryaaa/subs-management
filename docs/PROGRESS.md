@@ -293,3 +293,9 @@ Dark reference theme implemented. Lint, workspace types, seven web tests and pro
 
 ## M3 frontend checkpoint — 31 Oct 2026
 Auth/configuration/customer/subscription/invoice/dashboard/portal screens implemented against documented endpoints. Lint, workspace types, 8 web tests and production build pass. Remaining criteria and API integration are tracked individually in M3-CHECKLIST.md; no further tasks marked complete prematurely. P6-05 form is prepared but hard dependencies P0-06/P1-06 still pending.
+
+### 2026-10-31 — M3 integration checkpoint
+- M1 infrastructure/schema e43d3b8 merged; overlaps resolved in Vite config, tracker and dependency lockfile.
+- Subscription edit, taxes, discount attach/detach, report filters and lazy feature loading added.
+- Lint, workspace typecheck, 98 unit/UI tests and production build pass. Live API/database workflows and listed task acceptance gaps remain pending in M3-CHECKLIST.md.
+- User authorized pushing M3 branch checkpoints; no merge to main requested.
