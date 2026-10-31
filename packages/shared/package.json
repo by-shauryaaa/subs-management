@@ -19,5 +19,10 @@
   },
   "devDependencies": {
     "vitest": "5.0.5"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.23",
+    "decimal.js": "^10.6.0",
+    "zod": "^4.6.7"
   }
 }
