@@ -1,16 +1,26 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller.js';
-import { PrismaService } from './common/prisma/prisma.service.js';
+import { PrismaModule } from './common/prisma/prisma.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { JwtAuthGuard } from './common/auth/jwt-auth.guard.js';
 import { HealthModule } from './health/health.module.js';
+import { AttributesModule } from './modules/attributes/attributes.module.js';
+import { CustomersModule } from './modules/customers/customers.module.js';
+import { ProductsModule } from './modules/products/products.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 
 @Module({
-  imports: [HealthModule],
+  imports: [
+    PrismaModule,
+    HealthModule,
+    UsersModule,
+    CustomersModule,
+    AttributesModule,
+    ProductsModule,
+  ],
   controllers: [AppController],
   providers: [
-    PrismaService,
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
@@ -20,6 +30,5 @@ import { HealthModule } from './health/health.module.js';
       useClass: JwtAuthGuard,
     },
   ],
-  exports: [PrismaService],
 })
 export class AppModule {}

@@ -1,16 +1,23 @@
 import { hash } from '@node-rs/argon2';
 import type { Prisma, PrismaClient } from '@prisma/client';
+import {
+  DEFAULT_AUTO_CONFIRM_INVOICES,
+  DEFAULT_CURRENCY,
+  DEFAULT_INVOICE_FOOTER,
+  DEFAULT_QUOTATION_VALIDITY_DAYS,
+  DEFAULT_TIMEZONE,
+} from '@brightloop/shared';
 
 /** PRD ADM-01 defaults. Keys are the `Setting.key` contract (ARCHITECTURE §5). */
 export const DEFAULT_SETTINGS = {
   companyName: 'Brightloop',
   companyAddress: '',
   companyTaxId: '',
-  currency: 'INR',
-  timezone: 'Asia/Kolkata',
-  autoConfirmInvoices: true,
-  defaultQuotationValidityDays: 30,
-  invoiceFooter: '',
+  currency: DEFAULT_CURRENCY,
+  timezone: DEFAULT_TIMEZONE,
+  autoConfirmInvoices: DEFAULT_AUTO_CONFIRM_INVOICES,
+  defaultQuotationValidityDays: DEFAULT_QUOTATION_VALIDITY_DAYS,
+  invoiceFooter: DEFAULT_INVOICE_FOOTER,
 } satisfies Record<string, Prisma.InputJsonValue>;
 
 const TAXES = [

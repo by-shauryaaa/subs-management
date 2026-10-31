@@ -25,11 +25,13 @@ The API validates the root `.env` with Zod before Nest starts and exits with the
 
 ### Seed logins
 
-| Role  | Email                    | Password      |
-| ----- | ------------------------ | ------------- |
-| Admin | `admin@brightloop.local` | `Admin@12345` |
+| Role     | Email                                                   | Password       |
+| -------- | ------------------------------------------------------- | -------------- |
+| Admin    | `admin@brightloop.local`                                | `Admin@12345`  |
+| Staff    | `priya@brightloop.local`, `rahul@brightloop.local`      | `Staff@12345`  |
+| Customer | `ananya@nimbuslabs.in` (and 7 more printed by the seed) | `Customer@123` |
 
-The admin comes from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env`. The seed prints the logins when it finishes.
+The admin comes from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env`. The seed also creates 8 customers and 5 products (Brand variants: Odoo +560, Generic +0). The seed prints the logins when it finishes.
 
 ## Workspace
 

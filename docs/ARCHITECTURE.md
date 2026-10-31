@@ -779,8 +779,8 @@ The revenue series is `date_trunc('month', "paymentDate")` grouped over the last
 | Taxes | `GET /taxes` (A, S) · `POST /taxes` · `PATCH /taxes/:id` (A) | |
 | Payment terms | `GET /payment-terms` (A, S) · `POST` · `PATCH /:id` (A) | |
 | Attributes | `GET /attributes` (A, S) · `POST /attributes` · `PATCH /attributes/:id` · `POST /attributes/:id/values` · `PATCH /attribute-values/:id` (A) | |
-| Products | `GET /products` · `GET /products/:id` (A, S) · `POST /products` · `PATCH /products/:id` (A) | |
-| Variants | `GET /products/:id/variants` (A, S) · `POST /products/:id/variants` · `PATCH /variants/:id` (A) · `GET /variants?q=` picker (A, S) | |
+| Products | `GET /products` · `GET /products/:id` (A, S) · `POST /products` · `PATCH /products/:id` · `DELETE /products/:id` (unused only, else 409 `IN_USE_ARCHIVE_INSTEAD`) (A) | |
+| Variants | `GET /products/:id/variants` (A, S) · `POST /products/:id/variants` · `PATCH /variants/:id` · `DELETE /variants/:id` (unused, non-default only) (A) · `GET /variants?q=` picker (A, S) | |
 | Plans | `GET /plans` · `GET /plans/:id` (A, S) · `POST /plans` · `PATCH /plans/:id` (A) | |
 | Quotation templates | `GET` · `POST` · `GET /:id` · `PATCH /:id` (replaces lines) | A, S |
 | Subscriptions | `GET /subscriptions` (filters: status, customerId, planId, q; returns status counts in `meta.counts`) · `POST /subscriptions` · `POST /subscriptions/from-template` · `GET /subscriptions/:id` · `PATCH /subscriptions/:id` · `GET /subscriptions/:id/preview` · `GET /subscriptions/:id/history` | A, S |
@@ -794,6 +794,43 @@ The revenue series is `date_trunc('month', "paymentDate")` grouped over the last
 | Settings | `GET /settings` (A, S) · `PATCH /settings` (A) | |
 | Portal | `GET /portal/home` · `GET /portal/subscriptions` · `GET /portal/subscriptions/:id` · `POST /portal/subscriptions/:id/{accept,decline,pause,resume,close,renew}` · `GET /portal/invoices` · `GET /portal/invoices/:id` · `GET /portal/invoices/:id/pdf` · `GET /portal/profile` · `PATCH /portal/profile` | C |
 | Health | `GET /health` | public |
+
+### 7.3 Response shapes (users, customers, catalog)
+
+Request bodies and queries are the Zod schemas in `packages/shared/src/schemas/{users,customers,products,attributes}.ts`. Services live in `apps/api/src/modules/{users,customers,products,attributes}`. Money is a 2-decimal string; timestamps are ISO UTC. Lists use the `{ data, meta }` envelope.
+
+```jsonc
+// Customer: GET /customers (q: name, email, company; sort: name|email|companyName|createdAt), GET/POST/PATCH /customers/:id
+{ "id": "uuid", "userId": "uuid", "name": "Ananya Iyer", "email": "ananya@nimbuslabs.in",
+  "isActive": true, "invitePending": false, "companyName": "Nimbus Labs", "phone": "+91 98450 11223",
+  "billingAddress": "12 Residency Road, Bengaluru", "taxId": "29AACCN1234F1Z5",
+  "createdAt": "...", "updatedAt": "..." }
+
+// User: GET /users (role, isActive=true|false, q; sort: name|email|role|createdAt), POST /users, PATCH /users/:id
+{ "id": "uuid", "name": "Priya Sharma", "email": "priya@brightloop.local", "role": "STAFF",
+  "isActive": true, "invitePending": false, "customerId": null, "lastLoginAt": null, "createdAt": "..." }
+
+// Product: GET /products (q, type, isActive; sort: name|salesPrice|createdAt)
+{ "id": "uuid", "name": "Brightloop CRM", "type": "SERVICE", "salesPrice": "1000.00", "costPrice": "300.00",
+  "notes": null, "isActive": true, "taxes": [{ "id": "uuid", "name": "GST 18%", "rate": "18.00" }],
+  "variantCount": 3, "createdAt": "...", "updatedAt": "..." }
+// GET/POST/PATCH /products/:id return the same plus "variants": Variant[] (default first)
+
+// Variant: GET /products/:id/variants, POST /products/:id/variants, PATCH /variants/:id
+{ "id": "uuid", "productId": "uuid", "name": "Odoo", "priceExtra": "560.00", "price": "1560.00",
+  "isDefault": false, "isActive": true, "attributeValues": [{ "id": "uuid", "attributeName": "Brand", "name": "Odoo" }] }
+
+// Variant picker item: GET /variants?q=&productId= (active variants of active products)
+{ "id": "uuid", "productId": "uuid", "productName": "Brightloop CRM", "name": "Odoo",
+  "label": "Brightloop CRM (Odoo)", "isDefault": false, "priceExtra": "560.00", "price": "1560.00",
+  "taxes": [{ "id": "uuid", "name": "GST 18%", "rate": "18.00" }] }
+
+// Attribute: GET /attributes (q), POST /attributes, PATCH /attributes/:id
+{ "id": "uuid", "name": "Brand", "values": [{ "id": "uuid", "attributeId": "uuid", "name": "Odoo", "priceExtra": "560.00" }] }
+// POST /attributes/:id/values and PATCH /attribute-values/:id return one value object
+```
+
+Rules: emails are trimmed and lower-cased; duplicates give 409 `EMAIL_TAKEN`. `PATCH /users/:id` on an ADMIN gives 403 `FORBIDDEN`; `isActive: false` revokes all refresh tokens. Products auto-create a `Default` variant; the default variant cannot be archived or deleted on its own (400 `VALIDATION_ERROR`). A variant takes at most one value per attribute (400); a repeated value set gives 409 `VARIANT_EXISTS`. Duplicate attribute or value names give 409 `NAME_TAKEN`. Unknown or archived `taxIds` give 400 `VALIDATION_ERROR` with `details.taxIds`.
 
 ## 8. Frontend architecture
 

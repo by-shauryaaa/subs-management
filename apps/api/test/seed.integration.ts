@@ -1,5 +1,7 @@
 import { verify } from '@node-rs/argon2';
 import { DEFAULT_SETTINGS, seedBase } from '../prisma/seed/base.js';
+import { seedCatalog } from '../prisma/seed/catalog.js';
+import { SEED_CUSTOMER_PASSWORD, seedPeople } from '../prisma/seed/people.js';
 import { createTestDatabase } from './support/test-database.js';
 
 const db = createTestDatabase();
@@ -86,5 +88,45 @@ describe('base seed', () => {
       where: { key: 'companyName' },
     });
     expect(company.value).toBe('Edited Co');
+  });
+
+  it('seeds 2 staff and 8 customers who can log in, idempotently', async () => {
+    await seedPeople(client);
+    await seedPeople(client);
+    const [staff, customers] = await Promise.all([
+      client.user.count({ where: { role: 'STAFF' } }),
+      client.customer.count(),
+    ]);
+    expect([staff, customers]).toEqual([2, 8]);
+    const ananya = await client.user.findUniqueOrThrow({
+      where: { email: 'ananya@nimbuslabs.in' },
+      include: { customer: true },
+    });
+    expect(ananya.customer?.companyName).toBe('Nimbus Labs');
+    await expect(
+      verify(ananya.passwordHash ?? '', SEED_CUSTOMER_PASSWORD),
+    ).resolves.toBe(true);
+  });
+
+  it('seeds products with GST defaults and Brand variants, idempotently', async () => {
+    await seedCatalog(client);
+    await seedCatalog(client);
+    expect(await client.product.count()).toBe(5);
+    expect(await client.productVariant.count()).toBe(12);
+    const crm = await client.product.findFirstOrThrow({
+      where: { name: 'Brightloop CRM' },
+      include: { taxes: true, variants: { orderBy: { name: 'asc' } } },
+    });
+    expect(crm.taxes.map((t) => t.name)).toEqual(['GST 18%']);
+    expect(
+      crm.variants.map((v) => [
+        v.name,
+        crm.salesPrice.plus(v.priceExtra).toFixed(2),
+      ]),
+    ).toEqual([
+      ['Default', '1000.00'],
+      ['Generic', '1000.00'],
+      ['Odoo', '1560.00'],
+    ]);
   });
 });

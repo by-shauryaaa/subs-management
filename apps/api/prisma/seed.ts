@@ -4,6 +4,14 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 import { loadEnvironment } from '../src/config/environment.js';
 import { seedBase } from './seed/base.js';
+import { seedCatalog } from './seed/catalog.js';
+import {
+  SEED_CUSTOMERS,
+  SEED_CUSTOMER_PASSWORD,
+  SEED_STAFF,
+  SEED_STAFF_PASSWORD,
+  seedPeople,
+} from './seed/people.js';
 
 const logger = new Logger('Seed');
 
@@ -18,13 +26,21 @@ async function main(): Promise<void> {
       adminEmail: env.SEED_ADMIN_EMAIL,
       adminPassword: env.SEED_ADMIN_PASSWORD,
     });
+    await seedPeople(prisma);
+    await seedCatalog(prisma);
   } finally {
     await prisma.$disconnect();
   }
   logger.log('Seed complete. Logins:');
   logger.log(
-    `  Admin  ${env.SEED_ADMIN_EMAIL} / ${env.SEED_ADMIN_PASSWORD} (from .env)`,
+    `  Admin     ${env.SEED_ADMIN_EMAIL} / ${env.SEED_ADMIN_PASSWORD} (from .env)`,
   );
+  for (const staff of SEED_STAFF) {
+    logger.log(`  Staff     ${staff.email} / ${SEED_STAFF_PASSWORD}`);
+  }
+  for (const customer of SEED_CUSTOMERS) {
+    logger.log(`  Customer  ${customer.email} / ${SEED_CUSTOMER_PASSWORD}`);
+  }
 }
 
 main().catch((error: unknown) => {

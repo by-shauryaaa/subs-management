@@ -78,8 +78,8 @@
 | P1-01 | Signup, login, refresh, logout, me | M2 | 1:30–2:00 | ⬜ | |
 | P1-02 | RBAC & ownership | M2 | 2:00–2:15 | ⬜ | |
 | P1-03 | Forgot/reset password & invites | M2 | 2:15–2:30 | ⬜ | |
-| P1-04 | Staff management | M1 | 2:00–2:30 | ⬜ | |
-| P1-05 | Customers | M1 | 1:30–2:00 | ⬜ | |
+| P1-04 | Staff management | M1 | 2:00–2:30 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
+| P1-05 | Customers | M1 | 1:30–2:00 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
 | P1-06 | Web auth flows | M3 | 1:30–2:05 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 | P1-07 | Web users & customers pages | M3 | 2:05–2:30 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 
@@ -88,8 +88,8 @@
 |---|---|---|---|---|---|
 | P2-01 | Taxes | M3 | 2:30–2:45 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 | P2-02 | Payment terms | M3 | 2:45–2:55 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
-| P2-03 | Products | M1 | 2:30–2:55 | ⬜ | |
-| P2-04 | Attributes & variants | M1 | 2:55–3:15 | ⬜ | |
+| P2-03 | Products | M1 | 2:30–2:55 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
+| P2-04 | Attributes & variants | M1 | 2:55–3:15 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
 | P2-05 | Plans | M3 | 2:55–3:15 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 
 ### Phase 3 — Quotations & subscriptions
@@ -141,6 +141,12 @@
 ---
 
 ## Work log (newest first)
+
+### 2026-10-31 16:07 (IST) — P1-05 / P1-04 / P2-03 / P2-04 service layer and seed — M1
+- Status: 🟡 Partial — services, controllers (rebased on P0-04, registered in AppModule via a global `PrismaModule`), shared schemas, tests and seed done. Remaining: `@Roles` on each route once P1-02 lands; invite emails + `POST /customers/:id/resend-invite` once P1-03/P0-06 land.
+- What changed: Shared Zod schemas `schemas/{customers,users,products,attributes}.ts`. API `CustomersService` (list/search/sort/paginate, get, create CUSTOMER user + profile, edit), `UsersService` (list with role/active filters, create staff, rename/deactivate with refresh-token revocation, admin protected), `ProductsService` (CRUD, default taxes, Default variant in the same transaction, delete only when unused), `VariantsService` (attribute-value variants, summed price extra, duplicate and one-per-attribute checks, picker with final price and taxes), `AttributesService`. `DomainError`, `Page`/`parseSort`. Seed adds 2 staff, 8 customers, 5 products (12 variants). ARCHITECTURE §7.3 response shapes and endpoint additions; RULES error codes; README logins. D-021…D-023.
+- Tests: shared `catalog.test.ts` (6); API `customers-users.integration.ts` (7), `catalog.integration.ts` (8), seed tests (+2). `lint`, `typecheck`, `test`, `test:db` (33, incl. `m1-http.integration.ts` HTTP envelopes) pass; `pnpm db:seed` run twice.
+- Notes / follow-ups: **M2:** when P0-04 lands, provide `PrismaClient` (e.g. `{ provide: PrismaClient, useExisting: PrismaService }`) or tell M1 to switch the constructor type, and map `DomainError` in the filter. M1 then adds the four controllers. **M3:** shapes in ARCHITECTURE §7.3; flat customer rows match `features/resources.ts`.
 
 ### 2026-10-31 — P0-07 Web shell — M3
 - Status: ✅ Done
@@ -223,6 +229,9 @@ Entry format:
 | D-018 | 2026-10-31 | Hash passwords with `@node-rs/argon2` **2.2.2** (argon2id default, standard PHC string) instead of `argon2` | `argon2` has no prebuilt binary for Windows ARM64 and needs a native toolchain; the napi-rs build ships one for every platform without install scripts. Hashes are interchangeable PHC strings | apps/api (seed, P1-01 auth) |
 | D-019 | 2026-10-31 | `Setting` keys are camelCase JSON values: `companyName`, `companyAddress`, `companyTaxId`, `currency`, `timezone`, `autoConfirmInvoices`, `defaultQuotationValidityDays`, `invoiceFooter` (table in ARCHITECTURE §5) | The schema stores key/value pairs and the PRD lists fields without keys; seed and `SettingsService` must agree | P0-06, P0-08, P6-05 |
 | D-020 | 2026-10-31 | `pnpm db:seed` compiles `prisma/` with `tsc -p tsconfig.seed.json` into `dist/seed` and runs it with Node; integration tests share `test/support/test-database.ts` (isolated schema per file) | No extra TS runner dependency; tsc supports the decorators later seeds may reuse from services | apps/api |
+| D-021 | 2026-10-31 | M1 modules ship service-first: services take `PrismaClient` by injection and are integration-tested directly; controllers and Nest modules are added once M2's P0-04 (`PrismaService`, `ZodValidationPipe`, error filter) and P1-02 (`@Roles`) land. `DomainError` (`common/errors/domain-error.ts`) and `Page`/`parseSort` (`common/pagination/page.ts`) follow the ARCHITECTURE contract so M2 can keep or extend them | Avoids duplicating M2's in-flight API core while unblocking M3 with contracts and seed data | users, customers, products, attributes |
+| D-022 | 2026-10-31 | New error codes `NAME_TAKEN` (409, duplicate attribute/value names; reusable for taxes/plans) and `VARIANT_EXISTS` (409); `DELETE /products/:id` and `DELETE /variants/:id` for unused items (CAT-04: referenced items can only be archived); `PATCH /users/:id` refuses ADMIN accounts (403) so the last admin cannot be locked out | PRD is silent on exact codes and admin self-deactivation | API contract, RULES §4 |
+| D-023 | 2026-10-31 | Seeded staff and customers get demo passwords (`Staff@12345`, `Customer@123`) so every role can log in without invites; listed in README | RULES §6 seed credentials; invites need P1-03 | seed |
 
 ### D-014 — Exact P0-01 versions
 
