@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller.js';
 import { PrismaModule } from './common/prisma/prisma.module.js';
+import { CommonModule } from './common/common.module.js';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { JwtAuthGuard } from './common/auth/jwt-auth.guard.js';
 import { HealthModule } from './health/health.module.js';
@@ -20,6 +21,7 @@ import {
 @Module({
   imports: [
     PrismaModule,
+    CommonModule,
     HealthModule,
     UsersModule,
     CustomersModule,
