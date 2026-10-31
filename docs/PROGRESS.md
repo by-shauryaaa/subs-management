@@ -12,11 +12,11 @@
 |---|---|
 | Current phase | Phase 0 — Foundation |
 | Last updated | 2026-10-31 |
-| Overall | 8 / 50 tasks done (42 build tasks remaining) |
+| Overall | 9 / 50 tasks done (41 build tasks remaining) |
 
 | Phase | Done / Total | Status |
 |---|---|---|
-| P0 Foundation | 4 / 8 | 🟡 |
+| P0 Foundation | 5 / 8 | 🟡 |
 | P1 Auth & users | 0 / 7 | ⬜ |
 | P2 Catalog & config | 0 / 5 | ⬜ |
 | P3 Quotations & subscriptions | 0 / 7 | ⬜ |
@@ -70,7 +70,7 @@
 | P0-05 | Shared package basics | M2 | 0:20–0:50 | ⬜ | |
 | P0-06 | Domain services (numbering, audit, settings, mail) | M2 | 1:10–1:30 | ⬜ | |
 | P0-07 | Web shell | M3 | 0:20–1:30 | ✅ | 2026-10-31; all required checks passed |
-| P0-08 | Base seed | M1 | 1:05–1:30 | ⬜ | |
+| P0-08 | Base seed | M1 | 1:05–1:30 | ✅ | 2026-10-31 15:33 / 15:36 IST |
 
 ### Phase 1 — Auth & users
 | ID | Task | Owner | Slot | Status | Started / done |
@@ -159,6 +159,12 @@ Entry format:
 - Notes / follow-ups: <anything the next person must know>
 ```
 
+### 2026-10-31 15:36 (IST) — P0-08 Base seed — M1
+- Status: ✅ Done
+- What changed: `prisma/seed/base.ts` (`seedBase`): admin from env (argon2id hash, lower-cased email), ADM-01 default settings, GST 5/12/18 taxes, Immediate/Net 15/Net 30 terms, Brand attribute (Odoo +560, Generic +0); all upserts that keep existing rows. `prisma/seed.ts` entry prints logins; `pnpm db:seed` script; `loadEnvironment(envFile?)` accepts a path for callers outside `src/`. Extracted `test/support/test-database.ts`. README seed logins; ARCHITECTURE Setting-keys table. D-018…D-020.
+- Tests: `test/seed.integration.ts` (admin hash/email, settings, taxes/terms/attribute values, idempotent re-run keeps edited settings). `lint`, `typecheck`, `test:db` (12 tests) pass; `pnpm db:seed` run twice against the dev DB.
+- Notes / follow-ups: **M2:** `SettingsService` (P0-06) should use the D-019 keys/defaults (`DEFAULT_SETTINGS` in `prisma/seed/base.ts`); auth (P1-01) can verify seed hashes with `@node-rs/argon2` (already a dependency) — see D-018.
+
 ### 2026-10-31 15:32 (IST) — P0-03 Database schema & migrations — M1
 - Status: ✅ Done
 - What changed: Finished the P0-03 handoff: README quick start (env, Docker, migrate), database script table and team handoff; ARCHITECTURE §3 notes the port and Prisma 7 config/adapter; D-017 records the new dependency versions.
@@ -214,6 +220,9 @@ Entry format:
 | D-015 | 2026-10-31 | Use native ESM for NestJS 12 and shared, TypeScript 6.0.3, jsdom 29.1.1, ESLint flat config, and Jest's ESM VM flag | NestJS 12 is ESM-only; typescript-eslint supports TS <6.1 and ts-jest <7; jsdom 30 requires a newer Node than installed Node 24.11.0 | Build, lint, tests, Node runtime |
 | D-016 | 2026-10-31 | Permit install scripts only for `@parcel/watcher` and `unrs-resolver`; retain pnpm's exact `eslint@10.14.0` release-age exception | Required native watcher/resolver setup without blanket dependency-script approval; exact-version exception created by pnpm's install policy | pnpm-workspace.yaml |
 | D-017 | 2026-10-31 | P0-02/P0-03 dependencies: `zod` **4.6.7** (API env validation), `prisma` / `@prisma/client` / `@prisma/adapter-pg` **7.10.1**, `pg` / `@types/pg` **8.23.1**; Prisma 7 `prisma.config.ts` reads `DATABASE_URL` from the root `.env`; install scripts allowed for `prisma` and `@prisma/engines` | Prisma 7 requires a driver adapter and config file; Zod is the documented validator; engine download needs its install script | apps/api, pnpm-workspace.yaml |
+| D-018 | 2026-10-31 | Hash passwords with `@node-rs/argon2` **2.2.2** (argon2id default, standard PHC string) instead of `argon2` | `argon2` has no prebuilt binary for Windows ARM64 and needs a native toolchain; the napi-rs build ships one for every platform without install scripts. Hashes are interchangeable PHC strings | apps/api (seed, P1-01 auth) |
+| D-019 | 2026-10-31 | `Setting` keys are camelCase JSON values: `companyName`, `companyAddress`, `companyTaxId`, `currency`, `timezone`, `autoConfirmInvoices`, `defaultQuotationValidityDays`, `invoiceFooter` (table in ARCHITECTURE §5) | The schema stores key/value pairs and the PRD lists fields without keys; seed and `SettingsService` must agree | P0-06, P0-08, P6-05 |
+| D-020 | 2026-10-31 | `pnpm db:seed` compiles `prisma/` with `tsc -p tsconfig.seed.json` into `dist/seed` and runs it with Node; integration tests share `test/support/test-database.ts` (isolated schema per file) | No extra TS runner dependency; tsc supports the decorators later seeds may reuse from services | apps/api |
 
 ### D-014 — Exact P0-01 versions
 

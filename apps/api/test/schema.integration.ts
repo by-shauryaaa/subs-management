@@ -1,47 +1,10 @@
-import { execFileSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import process from 'node:process';
-import { fileURLToPath } from 'node:url';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, Prisma } from '@prisma/client';
-import pg from 'pg';
-import { loadEnvironment } from '../src/config/environment.js';
+import { Prisma } from '@prisma/client';
+import { createTestDatabase } from './support/test-database.js';
 
-const sourceURL = loadEnvironment().DATABASE_URL;
-const generatedSchema = `brightloop_test_${randomUUID().replaceAll('-', '')}`;
-const migrationURL = new URL(sourceURL);
-migrationURL.searchParams.set('schema', generatedSchema);
-const client = new PrismaClient({
-  adapter: new PrismaPg(
-    { connectionString: sourceURL },
-    { schema: generatedSchema },
-  ),
-});
-const admin = new pg.Client({
-  connectionString: sourceURL,
-  connectionTimeoutMillis: 10_000,
-});
-let adminConnected = false;
-
-function deployMigrations(): string {
-  return execFileSync(
-    process.execPath,
-    [
-      fileURLToPath(
-        new URL('../node_modules/prisma/build/index.js', import.meta.url),
-      ),
-      'migrate',
-      'deploy',
-    ],
-    {
-      cwd: fileURLToPath(new URL('../', import.meta.url)),
-      env: { ...process.env, DATABASE_URL: migrationURL.toString() },
-      timeout: 45_000,
-      encoding: 'utf8',
-      stdio: 'pipe',
-    },
-  );
-}
+const db = createTestDatabase();
+const { client, admin } = db;
+const generatedSchema = db.schema;
 
 async function fixture() {
   const customer = await client.customer.create({
@@ -105,42 +68,12 @@ function invoiceData(fixtureIds: {
   };
 }
 
-async function cleanupSchema(): Promise<void> {
-  if (!/^brightloop_test_[0-9a-f]{32}$/u.test(generatedSchema)) {
-    throw new Error('Refusing to drop an unowned schema');
-  }
-  if (adminConnected) {
-    const { rows } = await admin.query<{ statement: string }>(
-      `SELECT format('DROP SCHEMA %I CASCADE', $1::text) AS statement
-       FROM pg_catalog.pg_namespace WHERE nspname = $1`,
-      [generatedSchema],
-    );
-    if (rows[0]) await admin.query(rows[0].statement);
-  }
-}
-
 describe('canonical database schema', () => {
-  beforeAll(async () => {
-    await admin.connect();
-    adminConnected = true;
-    deployMigrations();
-    await client.$connect();
-  });
-
-  afterAll(async () => {
-    try {
-      await client.$disconnect();
-    } finally {
-      try {
-        await cleanupSchema();
-      } finally {
-        await admin.end();
-      }
-    }
-  });
+  beforeAll(() => db.setup());
+  afterAll(() => db.teardown());
 
   it('replays migrate deploy without pending migrations', () => {
-    expect(deployMigrations()).toContain('No pending migrations to apply');
+    expect(db.deployMigrations()).toContain('No pending migrations to apply');
   });
 
   it('creates every canonical Prisma model table in the isolated schema', async () => {

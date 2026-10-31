@@ -73,14 +73,15 @@ export function parseEnvironment(input: unknown): Environment {
   return result.data;
 }
 
-export function loadEnvironment(): Environment {
+/** Reads the root `.env` (overridden by process.env); `envFile` is for callers outside `src/`. */
+export function loadEnvironment(
+  envFile: URL = new URL('../../../../.env', import.meta.url),
+): Environment {
   let loadFailed = false;
   let fileEnvironment: Record<string, string | undefined> = {};
   try {
     // Explicit parsing also works with Jest's isolated process.env object.
-    fileEnvironment = parseEnv(
-      fs.readFileSync(new URL('../../../../.env', import.meta.url), 'utf8'),
-    );
+    fileEnvironment = parseEnv(fs.readFileSync(envFile, 'utf8'));
   } catch (error: unknown) {
     loadFailed =
       typeof error !== 'object' ||

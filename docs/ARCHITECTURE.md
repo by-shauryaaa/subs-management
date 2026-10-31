@@ -611,6 +611,19 @@ model Setting {
 }
 ```
 
+**Setting keys** (PRD ADM-01; defaults written by `prisma/seed/base.ts` `DEFAULT_SETTINGS`, and the same keys and defaults back `SettingsService`):
+
+| Key | JSON type | Default |
+|---|---|---|
+| `companyName` | string | `"Brightloop"` |
+| `companyAddress` | string | `""` |
+| `companyTaxId` | string | `""` |
+| `currency` | string (ISO 4217) | `"INR"` |
+| `timezone` | string (IANA) | `"Asia/Kolkata"` |
+| `autoConfirmInvoices` | boolean | `true` |
+| `defaultQuotationValidityDays` | integer ≥ 1 | `30` |
+| `invoiceFooter` | string | `""` |
+
 **Money and dates over the wire:**
 - Money is sent and received as **strings** with 2 decimal places (`"1560.00"`).
 - Business dates are `"YYYY-MM-DD"`.
@@ -867,7 +880,7 @@ The business time zone and currency live in the `Setting` table, not in environm
 docker compose up -d            # postgres :5432, mailpit SMTP :1025 / UI :8025
 pnpm install
 pnpm db:migrate                 # prisma migrate dev
-pnpm db:seed                    # base demo data
+pnpm db:seed                    # base demo data (idempotent; compiles prisma/seed.ts with tsc, then runs it)
 pnpm dev                        # api :4000 + web :5173 in parallel
 pnpm db:seed:large              # optional: performance dataset
 pnpm test | pnpm lint | pnpm typecheck | pnpm e2e
