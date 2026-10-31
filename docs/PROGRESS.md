@@ -10,13 +10,13 @@
 
 | | |
 |---|---|
-| Current phase | Phase 0 — Foundation |
+| Current phase | Phase 1 — Auth & users |
 | Last updated | 2026-10-31 |
-| Overall | 11 / 50 tasks done (39 build tasks remaining) |
+| Overall | 12 / 50 tasks done (38 build tasks remaining) |
 
 | Phase | Done / Total | Status |
 |---|---|---|
-| P0 Foundation | 7 / 8 | 🟡 |
+| P0 Foundation | 8 / 8 | ✅ |
 | P1 Auth & users | 0 / 7 | ⬜ |
 | P2 Catalog & config | 0 / 5 | ⬜ |
 | P3 Quotations & subscriptions | 0 / 7 | ⬜ |
@@ -43,7 +43,7 @@
 | Time | Checkpoint | Done? |
 |---|---|---|
 | T+0:20 | Scaffold pushed, everyone pulled | ⬜ |
-| T+1:30 | Phase 0 exit demo | ⬜ |
+| T+1:30 | Phase 0 exit demo | ✅ |
 | T+2:30 | Phase 1 exit demo | ⬜ |
 | T+3:15 | Phase 2 exit demo | ⬜ |
 | T+4:30 | Phase 3 exit demo | ⬜ |
@@ -68,7 +68,7 @@
 | P0-03 | Database schema & migrations | M1 | 0:35–1:05 | ✅ | 2026-10-31 15:20 / 15:32 IST |
 | P0-04 | API core | M2 | 0:50–1:10 | ✅ | 2026-10-31 16:00 / 16:08 IST |
 | P0-05 | Shared package basics | M2 | 0:20–0:50 | ✅ | 2026-10-31 15:24 / 15:32 IST |
-| P0-06 | Domain services (numbering, audit, settings, mail) | M2 | 1:10–1:30 | ⬜ | |
+| P0-06 | Domain services (numbering, audit, settings, mail) | M2 | 1:10–1:30 | ✅ | 2026-10-31 16:15 / 16:24 IST |
 | P0-07 | Web shell | M3 | 0:20–1:30 | ✅ | 2026-10-31; all required checks passed |
 | P0-08 | Base seed | M1 | 1:05–1:30 | ✅ | 2026-10-31 15:33 / 15:36 IST |
 
@@ -141,6 +141,12 @@
 ---
 
 ## Work log (newest first)
+
+### 2026-10-31 16:24 (IST) — P0-06 Domain services — M2
+- Status: ✅ Done
+- What changed: Created `NumberingService` with atomic PostgreSQL `Sequence` upsert and padded formatting (`PREFIX/YYYY/NNNNN`); `AuditService` writing actor, entity, action, and JSON diffs/meta to `AuditLog`; `SettingsService` reading typed settings with in-memory cache and `DEFAULT_SETTINGS` fallback; `MailService` wrapping `nodemailer` with password reset, staff invite, quotation, and invoice notification methods; exported via `@Global()` `CommonModule` registered in `AppModule`.
+- Tests: `apps/api/test/domain-services.spec.ts` (7 tests: gap-free parallel numbering, audit recording, cached settings fallback/invalidation, email templates); lint, typecheck, and full test suite passing (103 api tests, 35 shared tests, 10 web tests).
+- Notes: Nodemailer transporter defaults to JSON stream transport in test/development when SMTP env vars are absent. Ready for Auth (P1-01).
 
 ### 2026-10-31 16:07 (IST) — P1-05 / P1-04 / P2-03 / P2-04 service layer and seed — M1
 - Status: 🟡 Partial — services, controllers (rebased on P0-04, registered in AppModule via a global `PrismaModule`), shared schemas, tests and seed done. Remaining: `@Roles` on each route once P1-02 lands; invite emails + `POST /customers/:id/resend-invite` once P1-03/P0-06 land.
