@@ -11,6 +11,7 @@ cp .env.example .env
 docker compose up -d
 npx --yes pnpm@12.16.1 install --frozen-lockfile
 npx --yes pnpm@12.16.1 db:migrate
+npx --yes pnpm@12.16.1 db:seed
 npx --yes pnpm@12.16.1 dev
 ```
 
@@ -21,6 +22,14 @@ npx --yes pnpm@12.16.1 dev
 - Stop development processes with Ctrl+C; stop containers with `docker compose down` (add `-v` to wipe the database).
 
 The API validates the root `.env` with Zod before Nest starts and exits with the names (never values) of invalid variables. `.env` is git-ignored; only `.env.example` is committed.
+
+### Seed logins
+
+| Role  | Email                    | Password      |
+| ----- | ------------------------ | ------------- |
+| Admin | `admin@brightloop.local` | `Admin@12345` |
+
+The admin comes from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in `.env`. The seed prints the logins when it finishes.
 
 ## Workspace
 
@@ -50,6 +59,7 @@ Database scripts (run from the root; they target `apps/api`):
 | `pnpm db:migrate`                       | `prisma migrate dev` + client generation (applies all migrations to an empty database)        |
 | `pnpm db:deploy`                        | `prisma migrate deploy` (no prompts, no new migrations)                                       |
 | `pnpm db:status`                        | Shows whether the database is up to date                                                      |
+| `pnpm db:seed`                          | Base demo data; safe to re-run (existing rows are kept)                                       |
 | `pnpm db:validate` / `pnpm db:generate` | Validate the schema / regenerate the Prisma client                                            |
 | `pnpm test:db`                          | Integration tests against the local Postgres; each run uses and drops its own isolated schema |
 
@@ -59,7 +69,7 @@ Only M1 edits `apps/api/prisma/schema.prisma`. Never edit an applied migration; 
 
 ## Team handoff
 
-The schema is migrated (P0-03): pull, copy `.env.example` to `.env`, `docker compose up -d`, `pnpm install`, `pnpm db:migrate`. M2 can wire **P0-04 (API core)** and **P0-06 (domain services)** to Prisma; M3 continues **P0-07 (web shell)**. M1 continues with **P0-08 (base seed)**. Use `docs/PHASES.md` for dependencies and update `docs/PROGRESS.md` when starting or finishing a task.
+The schema is migrated (P0-03): pull, copy `.env.example` to `.env`, `docker compose up -d`, `pnpm install`, `pnpm db:migrate`. M2 can wire **P0-04 (API core)** and **P0-06 (domain services)** to Prisma; M3 continues **P0-07 (web shell)**. Then run `pnpm db:seed` for the admin, settings, taxes, payment terms and Brand attribute (P0-08). M1 continues with **P1-05 (customers)**. Use `docs/PHASES.md` for dependencies and update `docs/PROGRESS.md` when starting or finishing a task.
 
 ## Project Documentation
 
