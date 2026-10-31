@@ -4,10 +4,14 @@ import App from './App';
 
 afterEach(cleanup);
 
-test('renders the Brightloop heading', () => {
+test('opens the welcome screen with an accessible theme toggle', () => {
   render(<App />);
 
   expect(
-    screen.getByRole('heading', { name: 'Brightloop', level: 1 }),
+    screen.getByRole('heading', {
+      name: 'Welcome back.',
+      level: 1,
+    }),
   ).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Use light theme' })).toBeTruthy();
 });

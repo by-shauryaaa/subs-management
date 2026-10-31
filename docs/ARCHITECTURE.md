@@ -885,3 +885,8 @@ pnpm dev                        # api :4000 + web :5173 in parallel
 pnpm db:seed:large              # optional: performance dataset
 pnpm test | pnpm lint | pnpm typecheck | pnpm e2e
 ```
+
+
+### P0-07 implementation notes
+
+The web uses Tailwind 4 CSS-first tokens in `src/styles/globals.css` and the Vite plugin. shadcn aliases are configured in `components.json`, TypeScript and Vite. ThemeProvider follows OS preference until a user chooses a theme; only that preference is stored locally. Layouts reside in `components/layout`, URL list state in `components/data-table/use-table-params.ts`, and date formatting in `lib/format-date.ts`. API requests default to `/api/v1`, proxied to localhost:4000 in development, with a VITE_API_URL override. The client shares one refresh request across concurrent expired-token responses. Session integration and route guards are scheduled for P1-06. No API contracts changed.

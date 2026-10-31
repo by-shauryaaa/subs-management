@@ -12,11 +12,11 @@
 |---|---|
 | Current phase | Phase 0 — Foundation |
 | Last updated | 2026-10-31 |
-| Overall | 8 / 50 tasks done (42 build tasks remaining) |
+| Overall | 9 / 50 tasks done (41 build tasks remaining) |
 
 | Phase | Done / Total | Status |
 |---|---|---|
-| P0 Foundation | 4 / 8 | 🟡 |
+| P0 Foundation | 5 / 8 | 🟡 |
 | P1 Auth & users | 0 / 7 | ⬜ |
 | P2 Catalog & config | 0 / 5 | ⬜ |
 | P3 Quotations & subscriptions | 0 / 7 | ⬜ |
@@ -69,7 +69,7 @@
 | P0-04 | API core | M2 | 0:50–1:10 | ⬜ | |
 | P0-05 | Shared package basics | M2 | 0:20–0:50 | ⬜ | |
 | P0-06 | Domain services (numbering, audit, settings, mail) | M2 | 1:10–1:30 | ⬜ | |
-| P0-07 | Web shell | M3 | 0:20–1:30 | ⬜ | |
+| P0-07 | Web shell | M3 | 0:20–1:30 | ✅ | 2026-10-31; all required checks passed |
 | P0-08 | Base seed | M1 | 1:05–1:30 | ✅ | 2026-10-31 15:33 / 15:36 IST |
 
 ### Phase 1 — Auth & users
@@ -80,17 +80,17 @@
 | P1-03 | Forgot/reset password & invites | M2 | 2:15–2:30 | ⬜ | |
 | P1-04 | Staff management | M1 | 2:00–2:30 | ⬜ | |
 | P1-05 | Customers | M1 | 1:30–2:00 | ⬜ | |
-| P1-06 | Web auth flows | M3 | 1:30–2:05 | ⬜ | |
-| P1-07 | Web users & customers pages | M3 | 2:05–2:30 | ⬜ | |
+| P1-06 | Web auth flows | M3 | 1:30–2:05 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
+| P1-07 | Web users & customers pages | M3 | 2:05–2:30 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 
 ### Phase 2 — Catalog & configuration
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
-| P2-01 | Taxes | M3 | 2:30–2:45 | ⬜ | |
-| P2-02 | Payment terms | M3 | 2:45–2:55 | ⬜ | |
+| P2-01 | Taxes | M3 | 2:30–2:45 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
+| P2-02 | Payment terms | M3 | 2:45–2:55 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 | P2-03 | Products | M1 | 2:30–2:55 | ⬜ | |
 | P2-04 | Attributes & variants | M1 | 2:55–3:15 | ⬜ | |
-| P2-05 | Plans | M3 | 2:55–3:15 | ⬜ | |
+| P2-05 | Plans | M3 | 2:55–3:15 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 
 ### Phase 3 — Quotations & subscriptions
 | ID | Task | Owner | Slot | Status | Started / done |
@@ -101,7 +101,7 @@
 | P3-04 | Subscriptions CRUD | M1 | 3:15–3:50 | ⬜ | |
 | P3-05 | Transitions, renewal, audit | M1 | 3:50–4:30 | ⬜ | |
 | P3-06 | From template | M2 | 3:50–4:05 | ⬜ | |
-| P3-07 | Subscriptions UI | M3 | 3:15–4:30 | ⬜ | |
+| P3-07 | Subscriptions UI | M3 | 3:15–4:30 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 
 ### Phase 4 — Billing & invoices
 | ID | Task | Owner | Slot | Status | Started / done |
@@ -110,7 +110,7 @@
 | P4-02 | Billing run & lifecycle jobs | M1 | 5:00–5:45 | ⬜ | |
 | P4-03 | Invoice actions | M2 | 4:30–5:05 | ⬜ | |
 | P4-04 | Invoice PDF & send | M2 | 5:05–5:45 | ⬜ | |
-| P4-05 | Invoices & billing-runs UI | M3 | 4:30–5:45 | ⬜ | |
+| P4-05 | Invoices & billing-runs UI | M3 | 4:30–5:45 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 
 ### Phase 5 — Discounts & payments
 | ID | Task | Owner | Slot | Status | Started / done |
@@ -123,9 +123,9 @@
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
 | P6-01 | Portal API | M1 | 6:30–6:55 | ⬜ | |
-| P6-02 | Portal UI | M3 | 6:50–7:30 | ⬜ | |
+| P6-02 | Portal UI | M3 | 6:50–7:30 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 | P6-03 | Reports API | M2 | 6:15–6:45 | ⬜ | |
-| P6-04 | Finance dashboard UI | M3 | 6:05–6:50 | ⬜ | |
+| P6-04 | Finance dashboard UI | M3 | 6:05–6:50 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 | P6-05 | Settings UI | M3 | 5:45–6:05 | ⬜ | |
 
 ### Phase 7 — Hardening & demo
@@ -135,12 +135,19 @@
 | P7-02 | Performance pass | M1 | 7:15–7:35 | ⬜ | |
 | P7-03 | E2E tests | M2 | 7:05–7:40 | ⬜ | |
 | P7-04 | Security review | M2 | 6:45–7:05 | ⬜ | |
-| P7-05 | UX polish | M3 | 7:30–7:50 | ⬜ | |
+| P7-05 | UX polish | M3 | 7:30–7:50 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 | P7-06 | README & demo script | M1 | 7:35–7:50 | ⬜ | |
 
 ---
 
 ## Work log (newest first)
+
+### 2026-10-31 — P0-07 Web shell — M3
+- Status: ✅ Done
+- What changed: Token-based light/dark theme, fonts, responsive app/auth/portal layouts, collapsible sidebar and mobile Radix dialog, shadcn-compatible Button and configuration, Query provider, API envelope parsing and single-flight token refresh, Money, StatusBadge, EmptyState, PageHeader and server-mode URL-synced DataTable.
+- Tests: lint and workspace typecheck passed; workspace tests passed (web 7, shared 1, API 1); web production build passed.
+- Notes: Business routes intentionally show setup content until their assigned tasks land. Authentication forms, session provider, role-based navigation and guards belong to P1-06. Browser visual review is still pending. No backend/shared files edited. Nothing pushed.
+
 
 Entry format:
 
@@ -255,3 +262,49 @@ Entry format:
 | Endpoint / page | Dataset | p95 before | p95 after | Fix applied |
 |---|---|---|---|---|---|
 | — | — | — | — | — |
+
+
+
+### D-017 — P0-07 frontend setup
+
+Use Tailwind 4 CSS-first theme, Radix primitives with shadcn-compatible configuration, and TanStack Table 9 explicit features. Keep DESIGN branding while the requested Odoo styling choice is pending. Additional class composition helpers support the shadcn Button. Exact frontend versions:
+
+- `@brightloop/shared`: `workspace:*`
+- `@hookform/resolvers`: `6.0.2`
+- `@radix-ui/react-dialog`: `1.3.1`
+- `@radix-ui/react-slot`: `1.5.0`
+- `@tanstack/react-query`: `5.105.0`
+- `@tanstack/react-table`: `9.3.1`
+- `class-variance-authority`: `0.7.1`
+- `clsx`: `2.1.1`
+- `lucide-react`: `1.65.0`
+- `react`: `19.3.1`
+- `react-dom`: `19.3.1`
+- `react-hook-form`: `7.91.0`
+- `react-router-dom`: `7.18.5`
+- `sonner`: `2.0.8`
+- `tailwind-merge`: `3.7.0`
+- `zod`: `4.6.7`
+- `@tailwindcss/vite`: `4.3.3`
+- `@testing-library/dom`: `10.4.2`
+- `@testing-library/react`: `16.3.3`
+- `@types/react`: `19.3.0`
+- `@types/react-dom`: `19.3.0`
+- `@vitejs/plugin-react`: `6.1.2`
+- `jsdom`: `29.1.1`
+- `tailwindcss`: `4.3.3`
+- `vite`: `8.3.5`
+- `vitest`: `5.0.5`
+
+
+## Visual revision — 31 Oct 2026
+Dark reference theme implemented. Lint, workspace types, seven web tests and production build pass. Browser visual review and remote playback remain pending. Motion and HLS added as requested. Latest origin/main remains scaffold 78318a2; auth schema/API integration pending. Nothing pushed.
+
+## M3 frontend checkpoint — 31 Oct 2026
+Auth/configuration/customer/subscription/invoice/dashboard/portal screens implemented against documented endpoints. Lint, workspace types, 8 web tests and production build pass. Remaining criteria and API integration are tracked individually in M3-CHECKLIST.md; no further tasks marked complete prematurely. P6-05 form is prepared but hard dependencies P0-06/P1-06 still pending.
+
+### 2026-10-31 — M3 integration checkpoint
+- M1 infrastructure/schema e43d3b8 merged; overlaps resolved in Vite config, tracker and dependency lockfile.
+- Subscription edit, taxes, discount attach/detach, report filters and lazy feature loading added.
+- Lint, workspace typecheck, 98 unit/UI tests and production build pass. Live API/database workflows and listed task acceptance gaps remain pending in M3-CHECKLIST.md.
+- User authorized pushing M3 branch checkpoints; no merge to main requested.
