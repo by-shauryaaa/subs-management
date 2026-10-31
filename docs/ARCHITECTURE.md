@@ -72,16 +72,20 @@ Use the **latest stable** version of each package when you scaffold, and record 
 
 ## 3. Repository structure
 
+The tree below is the target layout across all phases, not a claim that later modules already exist. P0-01 provides only the three workspace packages, minimal runnable apps, smoke tests, and tooling. ESLint uses flat configuration. The API and shared package are native ESM (`NodeNext`); the web uses Vite's bundler resolution. Shared exports resolve to compiled `dist` JavaScript and declarations. Root scripts build shared before tests/typechecking/development, and watch it alongside both apps in development.
+
+The temporary scaffold API exposes only `GET /` on `127.0.0.1:3000`, returning `{ "name": "Brightloop" }`. P0-04 replaces this baseline with the documented API core, prefix, and health endpoint. The web starts on `127.0.0.1:5173`; its designed shell remains P0-07.
+
 ```
 brightloop/
-├── PRD.md  ARCHITECTURE.md  RULES.md  PHASES.md  DESIGN.md  PROGRESS.md
+├── docs/                          # PRD.md, ARCHITECTURE.md, RULES.md, PHASES.md, DESIGN.md, PROGRESS.md
 ├── README.md
 ├── docker-compose.yml              # postgres:16, mailpit
 ├── .env.example
 ├── package.json                    # root scripts (dev, build, lint, test, typecheck)
 ├── pnpm-workspace.yaml
 ├── tsconfig.base.json
-├── .eslintrc.cjs / .prettierrc
+├── eslint.config.mjs / .prettierrc.json
 │
 ├── packages/
 │   └── shared/

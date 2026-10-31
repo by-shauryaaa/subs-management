@@ -12,11 +12,11 @@
 |---|---|
 | Current phase | Phase 0 — Foundation |
 | Last updated | 2026-10-31 |
-| Overall | 4 / 50 tasks done (46 build tasks remaining) |
+| Overall | 5 / 50 tasks done (45 build tasks remaining) |
 
 | Phase | Done / Total | Status |
 |---|---|---|
-| P0 Foundation | 0 / 8 | ⬜ |
+| P0 Foundation | 1 / 8 | 🟡 |
 | P1 Auth & users | 0 / 7 | ⬜ |
 | P2 Catalog & config | 0 / 5 | ⬜ |
 | P3 Quotations & subscriptions | 0 / 7 | ⬜ |
@@ -63,7 +63,7 @@
 ### Phase 0 — Foundation
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
-| P0-01 | Scaffold monorepo | M1 | 0:00–0:20 | ⬜ | |
+| P0-01 | Scaffold monorepo | M1 | 0:00–0:20 | ✅ | 2026-10-31 14:53 / 15:04 IST |
 | P0-02 | Local infrastructure | M1 | 0:20–0:35 | ⬜ | |
 | P0-03 | Database schema & migrations | M1 | 0:35–1:05 | ⬜ | |
 | P0-04 | API core | M2 | 0:50–1:10 | ⬜ | |
@@ -152,6 +152,12 @@ Entry format:
 - Notes / follow-ups: <anything the next person must know>
 ```
 
+### 2026-10-31 15:04 (IST) — P0-01 Scaffold monorepo — M1
+- Status: ✅ Done
+- What changed: Added pnpm workspaces (`apps/api`, `apps/web`, `packages/shared`), strict TypeScript, ESLint flat config, Prettier, pinned dependencies and lockfile, root scripts, and runnable NestJS/React entry points importing the shared package. Moved the six planning documents to `docs/`, updated README links/setup/handoff, and aligned the architecture notes.
+- Tests: `install --frozen-lockfile`, `lint`, `typecheck`, `test` (3 smoke tests: shared export, API HTTP response, React heading), `build`, and `format:check` passed using pnpm 12.16.1. Bounded root `dev` smoke verified API JSON, web HTML, and Vite's transformed React entry; all spawned dev processes were stopped. Fixed Windows-incompatible single-quoted workspace filters found by that smoke test. Read-only scaffold review found no blocking issues.
+- Notes / follow-ups: Node 24 LTS; pnpm may be invoked with `npx --yes pnpm@12.16.1` (no global installation needed). M2 can start P0-05, M3 P0-07, M1 P0-02. API core/auth/database/UI shell remain unimplemented by design. The T+0:20 checkpoint stays unchecked until teammates have pulled.
+
 ### 2026-10-31 14:16 (IST) — DOC-04 Team plan — Team
 - Status: ✅ Done
 - What changed: `PHASES.md` now assigns every task to M1, M2 or M3 with a time slot on an 8-hour timeline, hard (⚑) vs soft dependencies, checkpoints and hand-offs. `RULES.md` has a Hackathon mode section. Task board here pre-filled with owners and slots. No features or tasks removed.
@@ -185,6 +191,19 @@ Entry format:
 | D-011 | 2026-10-31 | Access JWT in memory + rotating refresh token in httpOnly cookie | Avoids XSS token theft from localStorage | AUTH |
 | D-012 | 2026-10-31 | Password rule: ≥ 9 chars ("more than eight"), upper, lower, special | Literal reading of the brief | AUTH-01 |
 | D-013 | 2026-10-31 | Three lanes (M1 data & billing, M2 logic/auth/money, M3 UI) on an 8-hour timeline; hard (⚑) vs soft dependencies; M1 sole owner of `schema.prisma`, M2 of `packages/shared` | Hackathon time box: parallel work against fixed contracts keeps full scope | PHASES, RULES |
+| D-014 | 2026-10-31 | Pin P0-01 direct dependencies to the exact versions listed below; commit pnpm lockfile | Reproducible installs across all three members | All workspace packages |
+| D-015 | 2026-10-31 | Use native ESM for NestJS 12 and shared, TypeScript 6.0.3, jsdom 29.1.1, ESLint flat config, and Jest's ESM VM flag | NestJS 12 is ESM-only; typescript-eslint supports TS <6.1 and ts-jest <7; jsdom 30 requires a newer Node than installed Node 24.11.0 | Build, lint, tests, Node runtime |
+| D-016 | 2026-10-31 | Permit install scripts only for `@parcel/watcher` and `unrs-resolver`; retain pnpm's exact `eslint@10.14.0` release-age exception | Required native watcher/resolver setup without blanket dependency-script approval; exact-version exception created by pnpm's install policy | pnpm-workspace.yaml |
+
+### D-014 — Exact P0-01 versions
+
+- Runtime/toolchain: Node.js **24.11.0** tested (supported: 24.x >=24.11.0), pnpm **12.16.1**, TypeScript **6.0.3**.
+- Root tooling: `@eslint/js` **10.0.1**, `@types/node` **24.19.2**, `eslint` **10.14.0**, `eslint-config-prettier` **10.1.8**, `prettier` **3.9.10**, `typescript-eslint` **8.72.1**.
+- API runtime: `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express` **12.3.2** each; `reflect-metadata` **0.2.2**; `rxjs` **7.8.2**.
+- API tooling: `@nestjs/cli` **12.0.11**, `@nestjs/testing` **12.3.2**, `@types/jest` **30.0.0**, `@types/supertest` **7.2.1**, `jest` **30.5.2**, `supertest` **7.3.1**, `ts-jest` **29.4.15**.
+- Web runtime: `react` and `react-dom` **19.3.1** each.
+- Web tooling: `@types/react` and `@types/react-dom` **19.3.0** each; `@vitejs/plugin-react` **6.1.2**; `vite` **8.3.5**; `@testing-library/react` **16.3.3**; `@testing-library/dom` **10.4.2**; `jsdom` **29.1.1**.
+- Shared/web tests: `vitest` **5.0.5**. Both apps link `@brightloop/shared` using `workspace:*`.
 
 ---
 
