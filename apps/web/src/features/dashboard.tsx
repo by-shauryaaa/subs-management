@@ -15,7 +15,7 @@ import { DataTable } from '../components/data-table/data-table';
 import { Money } from '../components/money';
 import { Button } from '../components/ui/button';
 import { type Row, type Page, text } from './resource-page';
-import { RecordState } from './record-tools';
+import { EntitySelect, RecordState } from './record-tools';
 import { formatDate } from '../lib/format-date';
 export function Dashboard() {
   const { params, update } = useTableParams();
@@ -60,6 +60,20 @@ export function Dashboard() {
             />
           </label>
         ))}
+        <EntitySelect
+          endpoint="/plans"
+          name="plan-filter"
+          label="Plan"
+          value={params.get('planId') ?? ''}
+          onChange={(id) => update({ planId: id, page: 1 })}
+        />
+        <EntitySelect
+          endpoint="/customers"
+          name="customer-filter"
+          label="Customer"
+          value={params.get('customerId') ?? ''}
+          onChange={(id) => update({ customerId: id, page: 1 })}
+        />
       </div>
       <RecordState loading={summary.isPending} error={summary.error} />
       <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

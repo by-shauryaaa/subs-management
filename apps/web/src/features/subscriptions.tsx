@@ -1,3 +1,4 @@
+import { SubscriptionDiscounts } from './subscription-discounts';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -118,17 +119,50 @@ interface Line {
   taxIds: string[];
 }
 export function SubscriptionForm() {
+  const { id } = useParams();
+  const query = useQuery({
+    queryKey: ['/subscriptions', id, 'edit'],
+    queryFn: () => apiClient<Row>(`/subscriptions/${id}`),
+    enabled: !!id,
+  });
+  if (id && !query.data)
+    return <RecordState loading={query.isPending} error={query.error} />;
+  if (query.data?.status === 'CLOSED')
+    return <p>Closed subscriptions cannot be edited.</p>;
+  return <SubscriptionEditor key={id ?? 'new'} initial={query.data} />;
+}
+function SubscriptionEditor({ initial }: { initial?: Row }) {
   const navigate = useNavigate();
-  const [lines, setLines] = useState<Line[]>([
-    {
-      variantId: '',
-      description: '',
-      quantity: 1,
-      unitPrice: '0.00',
-      taxIds: [],
-    },
-  ]);
-  const [planId, setPlanId] = useState('');
+  const [lines, setLines] = useState<Line[]>(() =>
+    initial && Array.isArray(initial.lines)
+      ? (initial.lines as Row[])
+          .filter((line) => !line.isPlanFee)
+          .map((line) => ({
+            variantId: text(line.variantId),
+            description: text(line.description),
+            quantity: Number(line.quantity),
+            unitPrice: text(line.unitPrice),
+            taxIds: Array.isArray(line.taxes)
+              ? (line.taxes as Row[]).map((tax) => tax.id)
+              : [],
+          }))
+      : [
+          {
+            variantId: '',
+            description: '',
+            quantity: 1,
+            unitPrice: '0.00',
+            taxIds: [],
+          },
+        ],
+  );
+  const [planId, setPlanId] = useState(initial ? text(initial.planId) : '');
+  const locked =
+    !!initial && !['DRAFT', 'QUOTATION'].includes(text(initial.status));
+  const taxes = useQuery({
+    queryKey: ['/taxes', 'line-picker'],
+    queryFn: () => apiClient<Page<Row>>('/taxes?pageSize=100'),
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const plan = useQuery({
@@ -144,7 +178,7 @@ export function SubscriptionForm() {
   return (
     <>
       <PageHeader
-        title="New subscription"
+        title={initial ? `Edit ${text(initial.number)}` : 'New subscription'}
         description="Start a new recurring relationship."
       />
       <form
@@ -153,8 +187,7 @@ export function SubscriptionForm() {
           event.preventDefault();
           const form = new FormData(event.currentTarget);
           const body = {
-            customerId: form.get('customerId'),
-            planId,
+            ...(!locked ? { customerId: form.get('customerId'), planId } : {}),
             paymentTermId: form.get('paymentTermId'),
             startDate: form.get('startDate'),
             expiryDate: form.get('expiryDate') || null,
@@ -164,10 +197,13 @@ export function SubscriptionForm() {
           setSaving(true);
           setError('');
           try {
-            const result = await apiClient<Row>('/subscriptions', {
-              method: 'POST',
-              body: JSON.stringify(body),
-            });
+            const result = await apiClient<Row>(
+              initial ? `/subscriptions/${initial.id}` : '/subscriptions',
+              {
+                method: initial ? 'PATCH' : 'POST',
+                body: JSON.stringify(body),
+              },
+            );
             toast.success('Subscription created');
             navigate(`/app/subscriptions/${result.id}`);
           } catch (failure) {
@@ -184,6 +220,8 @@ export function SubscriptionForm() {
             endpoint="/customers"
             name="customerId"
             label="Customer"
+            defaultValue={initial ? text(initial.customerId) : undefined}
+            disabled={locked}
             required
           />
           <EntitySelect
@@ -191,6 +229,7 @@ export function SubscriptionForm() {
             name="planId"
             label="Plan"
             value={planId}
+            disabled={locked}
             onChange={setPlanId}
             required
           />
@@ -198,12 +237,17 @@ export function SubscriptionForm() {
             endpoint="/payment-terms"
             name="paymentTermId"
             label="Payment term"
+            defaultValue={initial ? text(initial.paymentTermId) : undefined}
             required
           />
           <label>
             Start date
             <input
               name="startDate"
+              defaultValue={
+                initial ? text(initial.startDate).slice(0, 10) : undefined
+              }
+              readOnly={locked}
               className="input mt-2"
               type="date"
               required
@@ -211,7 +255,16 @@ export function SubscriptionForm() {
           </label>
           <label>
             Expiry date
-            <input name="expiryDate" className="input mt-2" type="date" />
+            <input
+              defaultValue={
+                initial?.expiryDate
+                  ? text(initial.expiryDate).slice(0, 10)
+                  : undefined
+              }
+              name="expiryDate"
+              className="input mt-2"
+              type="date"
+            />
           </label>
         </div>
         <section className="space-y-4 rounded-lg border border-border bg-surface p-6">
@@ -279,6 +332,30 @@ export function SubscriptionForm() {
                   }
                 />
               </label>
+              <label>
+                Taxes
+                <select
+                  multiple
+                  className="input mt-2 h-24"
+                  value={line.taxIds}
+                  onChange={(event) =>
+                    changeLine(index, {
+                      taxIds: Array.from(
+                        event.target.selectedOptions,
+                        (option) => option.value,
+                      ),
+                    })
+                  }
+                >
+                  {taxes.data?.data
+                    .filter((tax) => tax.isActive !== false)
+                    .map((tax) => (
+                      <option key={tax.id} value={tax.id}>
+                        {text(tax.name)} ({text(tax.rate)}%)
+                      </option>
+                    ))}
+                </select>
+              </label>
               <Button
                 variant="ghost"
                 type="button"
@@ -315,7 +392,11 @@ export function SubscriptionForm() {
         </section>
         <label className="block">
           Notes
-          <textarea name="notes" className="input mt-2 h-24 py-3" />
+          <textarea
+            name="notes"
+            defaultValue={initial?.notes ? text(initial.notes) : undefined}
+            className="input mt-2 h-24 py-3"
+          />
         </label>
         {error && (
           <p role="alert" className="text-danger">
@@ -323,7 +404,11 @@ export function SubscriptionForm() {
           </p>
         )}
         <Button disabled={saving}>
-          {saving ? 'Saving…' : 'Create subscription'}
+          {saving
+            ? 'Saving…'
+            : initial
+              ? 'Save subscription'
+              : 'Create subscription'}
         </Button>
       </form>
     </>
@@ -365,15 +450,26 @@ export function SubscriptionDetail({ portal = false }: { portal?: boolean }) {
       <PageHeader
         title={text(record.number)}
         description={`${text(record.customer)} · ${text(record.plan)}`}
-        actions={actions.map((action) => (
-          <ActionButton
-            key={action}
-            endpoint={endpoint}
-            action={action}
-            label={action.charAt(0).toUpperCase() + action.slice(1)}
-            reason={['close', 'cancel', 'decline'].includes(action)}
-          />
-        ))}
+        actions={
+          <>
+            {!portal && record.status !== 'CLOSED' && (
+              <Button asChild variant="outline">
+                <Link to={`/app/subscriptions/${id}/edit`}>
+                  Edit subscription
+                </Link>
+              </Button>
+            )}
+            {actions.map((action) => (
+              <ActionButton
+                key={action}
+                endpoint={endpoint}
+                action={action}
+                label={action.charAt(0).toUpperCase() + action.slice(1)}
+                reason={['close', 'cancel', 'decline'].includes(action)}
+              />
+            ))}
+          </>
+        }
       />
       <div className="mb-6 flex flex-wrap items-center gap-3">
         {statuses
@@ -473,18 +569,13 @@ export function SubscriptionDetail({ portal = false }: { portal?: boolean }) {
             ))}
             <StatusBadge status={text(record.status)} />
           </div>
-          <div className="rounded-xl border border-border bg-surface p-6">
-            <h2 className="mb-4 font-heading text-xl">Discounts</h2>
-            {Array.isArray(record.discounts) && record.discounts.length ? (
-              (record.discounts as Row[]).map((discount) => (
-                <p key={discount.id}>
-                  {text(discount.name ?? discount.discount)}
-                </p>
-              ))
-            ) : (
-              <p className="text-muted-foreground">No discounts attached.</p>
-            )}
-          </div>
+          <SubscriptionDiscounts
+            subscriptionId={record.id}
+            discounts={
+              Array.isArray(record.discounts) ? (record.discounts as Row[]) : []
+            }
+            editable={!portal && record.status !== 'CLOSED'}
+          />
         </aside>
       </div>
     </>

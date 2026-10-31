@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'sonner';
@@ -13,17 +14,8 @@ import { AuthPage } from './auth/auth-pages';
 import { ResourcePage } from './features/resource-page';
 import { resources } from './features/resources';
 import { Preview } from './features/preview';
-import { Dashboard } from './features/dashboard';
-import {
-  SubscriptionList,
-  SubscriptionForm,
-  SubscriptionDetail,
-} from './features/subscriptions';
-import { InvoiceList, InvoiceDetail } from './features/invoices';
-import { SettingsPage } from './features/settings';
-import { CustomerDetail } from './features/customer-detail';
-import { BillingRuns } from './features/billing-runs';
-import { PortalHome, PortalProfile } from './features/portal';
+
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
 });
@@ -54,86 +46,112 @@ export default function App() {
       <ThemeProvider>
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
-              <Route path="/preview" element={<AppLayout />}>
-                <Route index element={<Preview />} />
-              </Route>
-              <Route path="/" element={<Navigate to="/login" replace />} />
-              <Route element={<AuthLayout />}>
-                {[
-                  'login',
-                  'signup',
-                  'forgot-password',
-                  'reset-password',
-                  'accept-invite',
-                ].map((path) => (
-                  <Route key={path} path={`/${path}`} element={<AuthPage />} />
-                ))}
-              </Route>
-              <Route element={<RequireRole roles={['ADMIN', 'STAFF']} />}>
-                <Route path="/app" element={<AppLayout />}>
-                  <Route index element={<Navigate to="dashboard" replace />} />
-                  {Object.entries({
-                    'config/taxes': 'taxes',
-                    'config/payment-terms': 'terms',
-                    'catalog/plans': 'plans',
-                    customers: 'customers',
-                  }).map(([path, key]) => (
+            <Suspense
+              fallback={
+                <div className="p-8" role="status">
+                  Loading workspace…
+                </div>
+              }
+            >
+              <Routes>
+                <Route path="/preview" element={<AppLayout />}>
+                  <Route index element={<Preview />} />
+                </Route>
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route element={<AuthLayout />}>
+                  {[
+                    'login',
+                    'signup',
+                    'forgot-password',
+                    'reset-password',
+                    'accept-invite',
+                  ].map((path) => (
                     <Route
                       key={path}
-                      path={path}
-                      element={<ResourcePage config={resources[key]!} />}
+                      path={`/${path}`}
+                      element={<AuthPage />}
                     />
                   ))}
-                  <Route element={<RequireRole roles={['ADMIN']} />}>
+                </Route>
+                <Route element={<RequireRole roles={['ADMIN', 'STAFF']} />}>
+                  <Route path="/app" element={<AppLayout />}>
                     <Route
-                      path="admin/users"
-                      element={<ResourcePage config={resources.users!} />}
+                      index
+                      element={<Navigate to="dashboard" replace />}
                     />
-                    <Route path="admin/settings" element={<SettingsPage />} />
+                    {Object.entries({
+                      'config/taxes': 'taxes',
+                      'config/payment-terms': 'terms',
+                      'catalog/plans': 'plans',
+                      customers: 'customers',
+                    }).map(([path, key]) => (
+                      <Route
+                        key={path}
+                        path={path}
+                        element={<ResourcePage config={resources[key]!} />}
+                      />
+                    ))}
+                    <Route element={<RequireRole roles={['ADMIN']} />}>
+                      <Route
+                        path="admin/users"
+                        element={<ResourcePage config={resources.users!} />}
+                      />
+                      <Route path="admin/settings" element={<SettingsPage />} />
+                      <Route
+                        path="admin/billing-runs"
+                        element={<BillingRuns />}
+                      />
+                    </Route>
+                    <Route path="dashboard" element={<Dashboard />} />
                     <Route
-                      path="admin/billing-runs"
-                      element={<BillingRuns />}
+                      path="subscriptions"
+                      element={<SubscriptionList />}
                     />
+                    <Route
+                      path="subscriptions/new"
+                      element={<SubscriptionForm />}
+                    />
+                    <Route
+                      path="subscriptions/:id/edit"
+                      element={<SubscriptionForm />}
+                    />
+                    <Route
+                      path="subscriptions/:id"
+                      element={<SubscriptionDetail />}
+                    />
+                    <Route path="invoices" element={<InvoiceList />} />
+                    <Route path="invoices/:id" element={<InvoiceDetail />} />
+                    <Route path="customers/:id" element={<CustomerDetail />} />
+                    <Route path="*" element={<WorkspacePlaceholder />} />
                   </Route>
-                  <Route path="dashboard" element={<Dashboard />} />
-                  <Route path="subscriptions" element={<SubscriptionList />} />
-                  <Route
-                    path="subscriptions/new"
-                    element={<SubscriptionForm />}
-                  />
-                  <Route
-                    path="subscriptions/:id"
-                    element={<SubscriptionDetail />}
-                  />
-                  <Route path="invoices" element={<InvoiceList />} />
-                  <Route path="invoices/:id" element={<InvoiceDetail />} />
-                  <Route path="customers/:id" element={<CustomerDetail />} />
-                  <Route path="*" element={<WorkspacePlaceholder />} />
                 </Route>
-              </Route>
-              <Route element={<RequireRole roles={['CUSTOMER']} />}>
-                <Route path="/portal" element={<PortalLayout />}>
-                  <Route index element={<PortalHome />} />
-                  <Route
-                    path="subscriptions"
-                    element={<SubscriptionList portal />}
-                  />
-                  <Route
-                    path="subscriptions/:id"
-                    element={<SubscriptionDetail portal />}
-                  />
-                  <Route path="invoices" element={<InvoiceList portal />} />
-                  <Route
-                    path="invoices/:id"
-                    element={<InvoiceDetail portal />}
-                  />
-                  <Route path="profile" element={<PortalProfile />} />
-                  <Route path="*" element={<WorkspacePlaceholder />} />
+                <Route element={<RequireRole roles={['CUSTOMER']} />}>
+                  <Route path="/portal" element={<PortalLayout />}>
+                    <Route index element={<PortalHome />} />
+                    <Route
+                      path="subscriptions"
+                      element={<SubscriptionList portal />}
+                    />
+                    <Route
+                      path="subscriptions/:id/edit"
+                      element={<SubscriptionForm />}
+                    />
+                    <Route
+                      path="subscriptions/:id"
+                      element={<SubscriptionDetail portal />}
+                    />
+                    <Route path="invoices" element={<InvoiceList portal />} />
+                    <Route
+                      path="invoices/:id"
+                      element={<InvoiceDetail portal />}
+                    />
+                    <Route path="profile" element={<PortalProfile />} />
+                    <Route path="*" element={<WorkspacePlaceholder />} />
+                  </Route>
                 </Route>
-              </Route>
-              <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </Routes>
+            </Suspense>
           </AuthProvider>
         </BrowserRouter>
         <Toaster position="bottom-right" richColors />
@@ -141,3 +159,69 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
+const Dashboard = lazy(() =>
+  import('./features/dashboard').then((module) => ({
+    default: module.Dashboard,
+  })),
+);
+
+const SubscriptionList = lazy(() =>
+  import('./features/subscriptions').then((module) => ({
+    default: module.SubscriptionList,
+  })),
+);
+
+const SubscriptionForm = lazy(() =>
+  import('./features/subscriptions').then((module) => ({
+    default: module.SubscriptionForm,
+  })),
+);
+
+const SubscriptionDetail = lazy(() =>
+  import('./features/subscriptions').then((module) => ({
+    default: module.SubscriptionDetail,
+  })),
+);
+
+const InvoiceList = lazy(() =>
+  import('./features/invoices').then((module) => ({
+    default: module.InvoiceList,
+  })),
+);
+
+const InvoiceDetail = lazy(() =>
+  import('./features/invoices').then((module) => ({
+    default: module.InvoiceDetail,
+  })),
+);
+
+const SettingsPage = lazy(() =>
+  import('./features/settings').then((module) => ({
+    default: module.SettingsPage,
+  })),
+);
+
+const CustomerDetail = lazy(() =>
+  import('./features/customer-detail').then((module) => ({
+    default: module.CustomerDetail,
+  })),
+);
+
+const BillingRuns = lazy(() =>
+  import('./features/billing-runs').then((module) => ({
+    default: module.BillingRuns,
+  })),
+);
+
+const PortalHome = lazy(() =>
+  import('./features/portal').then((module) => ({
+    default: module.PortalHome,
+  })),
+);
+
+const PortalProfile = lazy(() =>
+  import('./features/portal').then((module) => ({
+    default: module.PortalProfile,
+  })),
+);
