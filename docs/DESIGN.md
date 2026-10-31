@@ -1,3 +1,5 @@
+> USER APPROVED REVISION (31 Oct 2026): The supplied dark hero reference supersedes original branding. Use black surfaces, white pill buttons, blue highlights, Instrument Sans UI and Instrument Serif editorial headings. Keep Brightloop billing content, semantic status colors, responsive layouts and light mode. Video and motion belong to the auth brand panel, with static fallback and reduced-motion support.
+
 # DESIGN — Brightloop visual system
 
 > Every screen uses these tokens. Components never contain hex values, pixel font sizes or arbitrary Tailwind values. Everything maps to the CSS variables below (see `RULES.md`).
