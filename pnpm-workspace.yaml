@@ -3,6 +3,8 @@ packages:
   - packages/*
 allowBuilds:
   '@parcel/watcher': true
+  '@prisma/engines': true
+  prisma: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - eslint@10.14.0

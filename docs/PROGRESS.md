@@ -12,11 +12,11 @@
 |---|---|
 | Current phase | Phase 0 — Foundation |
 | Last updated | 2026-10-31 |
-| Overall | 6 / 50 tasks done (44 build tasks remaining) |
+| Overall | 8 / 50 tasks done (42 build tasks remaining) |
 
 | Phase | Done / Total | Status |
 |---|---|---|
-| P0 Foundation | 2 / 8 | 🟡 |
+| P0 Foundation | 4 / 8 | 🟡 |
 | P1 Auth & users | 0 / 7 | ⬜ |
 | P2 Catalog & config | 0 / 5 | ⬜ |
 | P3 Quotations & subscriptions | 0 / 7 | ⬜ |
@@ -64,8 +64,8 @@
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
 | P0-01 | Scaffold monorepo | M1 | 0:00–0:20 | ✅ | 2026-10-31 14:53 / 15:04 IST |
-| P0-02 | Local infrastructure | M1 | 0:20–0:35 | ⬜ | |
-| P0-03 | Database schema & migrations | M1 | 0:35–1:05 | ⬜ | |
+| P0-02 | Local infrastructure | M1 | 0:20–0:35 | ✅ | 2026-10-31 15:10 / 15:20 IST |
+| P0-03 | Database schema & migrations | M1 | 0:35–1:05 | ✅ | 2026-10-31 15:20 / 15:32 IST |
 | P0-04 | API core | M2 | 0:50–1:10 | ⬜ | |
 | P0-05 | Shared package basics | M2 | 0:20–0:50 | ⬜ | |
 | P0-06 | Domain services (numbering, audit, settings, mail) | M2 | 1:10–1:30 | ⬜ | |
@@ -159,6 +159,18 @@ Entry format:
 - Notes / follow-ups: <anything the next person must know>
 ```
 
+### 2026-10-31 15:32 (IST) — P0-03 Database schema & migrations — M1
+- Status: ✅ Done
+- What changed: Finished the P0-03 handoff: README quick start (env, Docker, migrate), database script table and team handoff; ARCHITECTURE §3 notes the port and Prisma 7 config/adapter; D-017 records the new dependency versions.
+- Tests: `install --frozen-lockfile`, `lint`, `typecheck`, `test`, `test:db` (8 isolated-schema integration tests), `build`, `format:check` all pass; `db:status` reports 2 migrations, up to date.
+- Notes / follow-ups: Schema updated: pull + `pnpm install` + `pnpm db:migrate`. M2 can wire P0-04 PrismaService against it (use `@prisma/adapter-pg`, see `test/schema.integration.ts`).
+
+### 2026-10-31 15:27 (IST) — P0-02 / P0-03 paused at user request — M1
+- Status: 🟡 Partial overall; P0-02 implementation verified, P0-03 implementation and database tests verified but final handoff not completed.
+- What changed: Added PostgreSQL 16 and Mailpit Compose services, the exact documented `.env.example`, typed Zod environment validation before API boot, configured port 4000, and root web env loading. Added canonical Prisma schema, Prisma 7 config, generated client, initial SQL migration and separate partial unique invoice-period index migration, database scripts and isolated-schema integration tests.
+- Tests: PostgreSQL and Mailpit healthy; API root `.env` and Mailpit HTTP smoke passed; invalid environment exits before Nest startup. Both migrations applied from an empty local database; second `db:migrate` is a no-op; `db:status` is up to date. Latest lint, typecheck, 89 normal tests and 8 isolated-database integration tests passed. Fixed the in-progress Jest environment-loading issue using explicit file parsing without mutating process.env. Test schemas cleaned up.
+- Notes / follow-ups: Stopped as requested. Changes are local and uncommitted/unpushed. Remaining: update README/ARCHITECTURE and dependency Decisions log, final production build/format/frozen-install checks and final review, then mark P0-03 done and commit/push. Local `.env` is ignored; Docker services remain running. No later feature tasks started.
+
 ### 2026-10-31 15:04 (IST) — P0-01 Scaffold monorepo — M1
 - Status: ✅ Done
 - What changed: Added pnpm workspaces (`apps/api`, `apps/web`, `packages/shared`), strict TypeScript, ESLint flat config, Prettier, pinned dependencies and lockfile, root scripts, and runnable NestJS/React entry points importing the shared package. Moved the six planning documents to `docs/`, updated README links/setup/handoff, and aligned the architecture notes.
@@ -201,6 +213,7 @@ Entry format:
 | D-014 | 2026-10-31 | Pin P0-01 direct dependencies to the exact versions listed below; commit pnpm lockfile | Reproducible installs across all three members | All workspace packages |
 | D-015 | 2026-10-31 | Use native ESM for NestJS 12 and shared, TypeScript 6.0.3, jsdom 29.1.1, ESLint flat config, and Jest's ESM VM flag | NestJS 12 is ESM-only; typescript-eslint supports TS <6.1 and ts-jest <7; jsdom 30 requires a newer Node than installed Node 24.11.0 | Build, lint, tests, Node runtime |
 | D-016 | 2026-10-31 | Permit install scripts only for `@parcel/watcher` and `unrs-resolver`; retain pnpm's exact `eslint@10.14.0` release-age exception | Required native watcher/resolver setup without blanket dependency-script approval; exact-version exception created by pnpm's install policy | pnpm-workspace.yaml |
+| D-017 | 2026-10-31 | P0-02/P0-03 dependencies: `zod` **4.6.7** (API env validation), `prisma` / `@prisma/client` / `@prisma/adapter-pg` **7.10.1**, `pg` / `@types/pg` **8.23.1**; Prisma 7 `prisma.config.ts` reads `DATABASE_URL` from the root `.env`; install scripts allowed for `prisma` and `@prisma/engines` | Prisma 7 requires a driver adapter and config file; Zod is the documented validator; engine download needs its install script | apps/api, pnpm-workspace.yaml |
 
 ### D-014 — Exact P0-01 versions
 
