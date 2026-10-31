@@ -9,6 +9,13 @@ import { AttributesModule } from './modules/attributes/attributes.module.js';
 import { CustomersModule } from './modules/customers/customers.module.js';
 import { ProductsModule } from './modules/products/products.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { BillingModule } from './modules/billing/billing.js';
+import {
+  ConfigModule,
+  InvoicesModule,
+  SubscriptionsModule,
+} from './modules/core-modules.js';
 
 @Module({
   imports: [
@@ -18,6 +25,11 @@ import { UsersModule } from './modules/users/users.module.js';
     CustomersModule,
     AttributesModule,
     ProductsModule,
+    AuthModule,
+    ConfigModule,
+    SubscriptionsModule,
+    InvoicesModule,
+    BillingModule,
   ],
   controllers: [AppController],
   providers: [

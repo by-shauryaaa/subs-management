@@ -17,10 +17,12 @@ import {
   idParamSchema,
   updateCustomerSchema,
 } from '@brightloop/shared';
+import { Roles } from '../../common/auth/roles.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { CustomersService } from './customers.service.js';
 
-/** Admin and Staff (PRD §5.1). Role guards are added with P1-02. */
+/** Admin and Staff (PRD §5.1).  */
+@Roles('ADMIN', 'STAFF')
 @Controller('customers')
 export class CustomersController {
   constructor(private readonly customers: CustomersService) {}

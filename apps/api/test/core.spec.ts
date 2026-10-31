@@ -6,6 +6,8 @@ import type { Server } from 'node:http';
 import request from 'supertest';
 import { z } from 'zod';
 import { AppModule } from '../src/app.module.js';
+import { loadEnvironment } from '../src/config/environment.js';
+import { signAccess } from '../src/modules/auth/tokens.js';
 import { Public } from '../src/common/auth/public.decorator.js';
 import { ZodValidationPipe } from '../src/common/pipes/zod-validation.pipe.js';
 import { DomainError } from '../src/common/errors/domain.error.js';
@@ -131,7 +133,7 @@ describe('API Core (P0-04)', () => {
     });
   });
 
-  describe('JwtAuthGuard (P0-04 placeholder)', () => {
+  describe('JwtAuthGuard', () => {
     it('blocks unauthenticated requests on non-public routes with 401', async () => {
       const res = await request(app.getHttpServer())
         .get('/api/v1/test-core/protected')
@@ -141,10 +143,24 @@ describe('API Core (P0-04)', () => {
       expect(res.body.error.code).toBe('UNAUTHENTICATED');
     });
 
-    it('allows requests with authorization header', async () => {
-      const res = await request(app.getHttpServer())
+    it('rejects a forged token and accepts a signed one', async () => {
+      await request(app.getHttpServer())
         .get('/api/v1/test-core/protected')
         .set('Authorization', 'Bearer fake-token')
+        .expect(401);
+      const env = loadEnvironment();
+      const token = signAccess(
+        {
+          sub: '00000000-0000-4000-8000-000000000000',
+          role: 'ADMIN',
+          customerId: null,
+        },
+        env.JWT_ACCESS_SECRET,
+        env.JWT_ACCESS_TTL,
+      );
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/test-core/protected')
+        .set('Authorization', `Bearer ${token}`)
         .expect(200);
 
       expect(res.body).toEqual({ secret: 'data' });

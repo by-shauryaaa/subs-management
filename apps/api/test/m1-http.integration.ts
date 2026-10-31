@@ -10,8 +10,7 @@ import { createTestDatabase } from './support/test-database.js';
 
 const db = createTestDatabase();
 let app: INestApplication<Server>;
-// The P0-04 guard only checks for a header until P1-01/P1-02 land.
-const auth = { Authorization: 'Bearer test' };
+const auth: Record<string, string> = {};
 const api = () => request(app.getHttpServer());
 
 describe('M1 endpoints over HTTP', () => {
@@ -28,6 +27,11 @@ describe('M1 endpoints over HTTP', () => {
     app = module.createNestApplication();
     app.setGlobalPrefix('api/v1', { exclude: ['/'] });
     await app.init();
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ email: 'admin@brightloop.test', password: 'Admin@12345' })
+      .expect(200);
+    auth.Authorization = `Bearer ${login.body.accessToken as string}`;
   });
   afterAll(async () => {
     await app.close();
@@ -133,5 +137,139 @@ describe('M1 endpoints over HTTP', () => {
       .send({ isActive: false })
       .expect(403);
     expect(res.body.error.code).toBe('FORBIDDEN');
+  });
+
+  it('runs the core flow: subscription → activate → invoice → payment → PAID', async () => {
+    const [customer] = (
+      await api().get('/api/v1/customers').set(auth).expect(200)
+    ).body.data;
+    const plan = (
+      await api()
+        .post('/api/v1/plans')
+        .set(auth)
+        .send({ name: 'Monthly', price: '100.00', billingPeriod: 'MONTHLY' })
+        .expect(201)
+    ).body;
+    const term = (
+      await api().get('/api/v1/payment-terms').set(auth).expect(200)
+    ).body.data[0];
+    const tax = (
+      await api().get('/api/v1/taxes').set(auth).expect(200)
+    ).body.data.find((t: { name: string }) => t.name === 'GST 18%');
+    const sub = (
+      await api()
+        .post('/api/v1/subscriptions')
+        .set(auth)
+        .send({
+          customerId: customer.id,
+          planId: plan.id,
+          paymentTermId: term.id,
+          startDate: '2026-01-01',
+          lines: [
+            {
+              description: 'Seat',
+              quantity: 2,
+              unitPrice: '1560.00',
+              taxIds: [tax.id],
+            },
+          ],
+        })
+        .expect(201)
+    ).body;
+    expect(sub).toMatchObject({
+      status: 'DRAFT',
+      subtotal: '3220.00',
+      allowedActions: ['send', 'confirm', 'cancel'],
+    });
+    await api()
+      .post(`/api/v1/subscriptions/${sub.id}/activate`)
+      .set(auth)
+      .expect(409);
+    await api()
+      .post(`/api/v1/subscriptions/${sub.id}/confirm`)
+      .set(auth)
+      .expect(200);
+    const active = (
+      await api()
+        .post(`/api/v1/subscriptions/${sub.id}/activate`)
+        .set(auth)
+        .expect(200)
+    ).body;
+    expect(active.status).toBe('ACTIVE');
+
+    const invoices = async () =>
+      (
+        await api()
+          .get(`/api/v1/invoices?subscriptionId=${sub.id}&pageSize=100`)
+          .set(auth)
+          .expect(200)
+      ).body;
+    const first = await invoices();
+    expect(first.meta.total).toBeGreaterThanOrEqual(10); // catch-up from Jan 2026
+    await api().post('/api/v1/billing/run').set(auth).expect(200);
+    await api().post('/api/v1/billing/run').set(auth).expect(200);
+    expect((await invoices()).meta.total).toBe(first.meta.total);
+
+    const invoice = first.data.at(-1);
+    expect(invoice).toMatchObject({
+      status: 'CONFIRMED',
+      total: '3781.60',
+      isOverdue: true,
+    });
+    await api()
+      .post(`/api/v1/invoices/${invoice.id}/payments`)
+      .set(auth)
+      .send({ amount: '5000' })
+      .expect(422);
+    await api()
+      .post(`/api/v1/invoices/${invoice.id}/payments`)
+      .set(auth)
+      .send({ amount: '1000' })
+      .expect(201);
+    const paid = (
+      await api()
+        .post(`/api/v1/invoices/${invoice.id}/payments`)
+        .set(auth)
+        .send({ amount: '2781.60' })
+        .expect(201)
+    ).body;
+    expect(paid).toMatchObject({ status: 'PAID', amountDue: '0.00' });
+    const history = (
+      await api()
+        .get(`/api/v1/subscriptions/${sub.id}/history`)
+        .set(auth)
+        .expect(200)
+    ).body;
+    expect(history.map((h: { action: string }) => h.action)).toEqual(
+      expect.arrayContaining([
+        'created',
+        'transition:confirm',
+        'transition:activate',
+      ]),
+    );
+  });
+
+  it('enforces roles: staff cannot manage users', async () => {
+    await db.client.user.update({
+      where: { email: 'sara@brightloop.test' },
+      data: {
+        passwordHash: (
+          await db.client.user.findFirstOrThrow({ where: { role: 'ADMIN' } })
+        ).passwordHash,
+      },
+    });
+    const login = await api()
+      .post('/api/v1/auth/login')
+      .send({ email: 'sara@brightloop.test', password: 'Admin@12345' })
+      .expect(200);
+    const staff = {
+      Authorization: `Bearer ${login.body.accessToken as string}`,
+    };
+    await api().get('/api/v1/users').set(staff).expect(403);
+    await api().get('/api/v1/customers').set(staff).expect(200);
+    await api()
+      .post('/api/v1/auth/login')
+      .send({ email: 'sara@brightloop.test', password: 'wrong' })
+      .expect(401);
   });
 });

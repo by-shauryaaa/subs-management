@@ -16,12 +16,14 @@ import {
   updateVariantSchema,
   variantPickerQuerySchema,
 } from '@brightloop/shared';
+import { Roles } from '../../common/auth/roles.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { VariantsService } from './variants.service.js';
 
 const idPipe = new ZodValidationPipe(idParamSchema);
 
-/** Picker: Admin and Staff; writes: Admin. Role guards are added with P1-02. */
+/** Picker: Admin and Staff; writes: Admin.  */
+@Roles('ADMIN', 'STAFF')
 @Controller('variants')
 export class VariantsController {
   constructor(private readonly variants: VariantsService) {}
@@ -34,6 +36,7 @@ export class VariantsController {
     return this.variants.picker(query);
   }
 
+  @Roles('ADMIN')
   @Patch(':id')
   update(
     @Param(idPipe) { id }: IdParamDto,
@@ -42,6 +45,7 @@ export class VariantsController {
     return this.variants.update(id, body);
   }
 
+  @Roles('ADMIN')
   @Delete(':id')
   @HttpCode(204)
   async remove(@Param(idPipe) { id }: IdParamDto): Promise<void> {

@@ -17,10 +17,12 @@ import {
   updateUserSchema,
   userListQuerySchema,
 } from '@brightloop/shared';
+import { Roles } from '../../common/auth/roles.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { UsersService } from './users.service.js';
 
-/** Admin only (ADM-02). Role guards are added with P1-02. */
+/** Admin only (ADM-02).  */
+@Roles('ADMIN')
 @Controller('users')
 export class UsersController {
   constructor(private readonly users: UsersService) {}

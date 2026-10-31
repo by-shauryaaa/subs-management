@@ -21,13 +21,15 @@ import {
   productListQuerySchema,
   updateProductSchema,
 } from '@brightloop/shared';
+import { Roles } from '../../common/auth/roles.decorator.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
 import { ProductsService } from './products.service.js';
 import { VariantsService } from './variants.service.js';
 
 const idPipe = new ZodValidationPipe(idParamSchema);
 
-/** Reads: Admin and Staff; writes: Admin (PRD §5.1). Role guards are added with P1-02. */
+/** Reads: Admin and Staff; writes: Admin (PRD §5.1).  */
+@Roles('ADMIN', 'STAFF')
 @Controller('products')
 export class ProductsController {
   constructor(
@@ -43,6 +45,7 @@ export class ProductsController {
     return this.products.list(query);
   }
 
+  @Roles('ADMIN')
   @Post()
   create(
     @Body(new ZodValidationPipe(createProductSchema)) body: CreateProductDto,
@@ -55,6 +58,7 @@ export class ProductsController {
     return this.products.get(id);
   }
 
+  @Roles('ADMIN')
   @Patch(':id')
   update(
     @Param(idPipe) { id }: IdParamDto,
@@ -63,6 +67,7 @@ export class ProductsController {
     return this.products.update(id, body);
   }
 
+  @Roles('ADMIN')
   @Delete(':id')
   @HttpCode(204)
   async remove(@Param(idPipe) { id }: IdParamDto): Promise<void> {
@@ -74,6 +79,7 @@ export class ProductsController {
     return this.variants.listForProduct(id);
   }
 
+  @Roles('ADMIN')
   @Post(':id/variants')
   createVariant(
     @Param(idPipe) { id }: IdParamDto,

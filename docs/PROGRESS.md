@@ -142,6 +142,12 @@
 
 ## Work log (newest first)
 
+### 2026-10-31 16:32 (IST) — Core flow on branch `m1/core-flow` (auth, config, pricing, subscriptions, invoices, payments, billing) — M1
+- Status: 🟡 Demo-ready core; taken over from M2/M3 lanes at user request to finish in time.
+- What changed: Auth (login/signup/refresh cookie rotation/logout/me/change-password, HS256 JWT guard, `@Roles`, `@CurrentUser`) applied to every controller; taxes, payment terms, plans, settings APIs; shared `priceDocument` + subscription state machine; subscriptions CRUD/preview/transitions/renewal/history with plan-fee line and `allowedActions`; invoice generator (idempotent per period, snapshot, auto-confirm), invoice list/views/detail/confirm/bulk/cancel/send; payments (row lock, ≤ due, auto PAID, admin delete); billing run with advisory lock, activation, catch-up, expiry close, `BillingRun` log. Seed adds 4 plans, subscriptions in every status, invoices (paid/partial/overdue).
+- Tests: shared engine/machine tests; HTTP flow test (subscription → activate → catch-up invoices → billing run twice no duplicates → partial + full payment → PAID; roles 403; bad login 401). lint, typecheck, test (96), test:db (35) pass.
+- Not done: forgot/reset/invites, PDF, discounts on subscriptions, reports API, portal API, cron schedule, large seed/perf, E2E.
+
 ### 2026-10-31 16:07 (IST) — P1-05 / P1-04 / P2-03 / P2-04 service layer and seed — M1
 - Status: 🟡 Partial — services, controllers (rebased on P0-04, registered in AppModule via a global `PrismaModule`), shared schemas, tests and seed done. Remaining: `@Roles` on each route once P1-02 lands; invite emails + `POST /customers/:id/resend-invite` once P1-03/P0-06 land.
 - What changed: Shared Zod schemas `schemas/{customers,users,products,attributes}.ts`. API `CustomersService` (list/search/sort/paginate, get, create CUSTOMER user + profile, edit), `UsersService` (list with role/active filters, create staff, rename/deactivate with refresh-token revocation, admin protected), `ProductsService` (CRUD, default taxes, Default variant in the same transaction, delete only when unused), `VariantsService` (attribute-value variants, summed price extra, duplicate and one-per-attribute checks, picker with final price and taxes), `AttributesService`. `DomainError`, `Page`/`parseSort`. Seed adds 2 staff, 8 customers, 5 products (12 variants). ARCHITECTURE §7.3 response shapes and endpoint additions; RULES error codes; README logins. D-021…D-023.

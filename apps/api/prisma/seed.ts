@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import { loadEnvironment } from '../src/config/environment.js';
 import { seedBase } from './seed/base.js';
 import { seedCatalog } from './seed/catalog.js';
+import { seedSubscriptions } from './seed/subscriptions.js';
 import {
   SEED_CUSTOMERS,
   SEED_CUSTOMER_PASSWORD,
@@ -28,6 +29,7 @@ async function main(): Promise<void> {
     });
     await seedPeople(prisma);
     await seedCatalog(prisma);
+    await seedSubscriptions(prisma, env.SEED_ADMIN_EMAIL);
   } finally {
     await prisma.$disconnect();
   }
