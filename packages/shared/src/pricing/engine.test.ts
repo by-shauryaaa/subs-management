@@ -48,6 +48,75 @@ describe('priceDocument', () => {
       ]).taxTotal,
     ).toBe('0.01');
   });
+
+  it('applies percentage and fixed discounts at subscription and product scope', () => {
+    const result = priceDocument(
+      [
+        {
+          quantity: 2,
+          unitPrice: '100.00',
+          taxes: [gst18],
+          productId: 'prod-1',
+        },
+        {
+          quantity: 1,
+          unitPrice: '200.00',
+          taxes: [gst18],
+          productId: 'prod-2',
+        },
+      ],
+      [
+        {
+          id: 'disc-1',
+          name: '10% off prod-1',
+          type: 'PERCENTAGE',
+          value: '10',
+          scope: 'PRODUCTS',
+          productIds: ['prod-1'],
+        },
+        {
+          id: 'disc-2',
+          name: 'Flat 50 off sub',
+          type: 'FIXED',
+          value: '50',
+          scope: 'SUBSCRIPTION',
+        },
+      ],
+    );
+
+    expect(result.subtotal).toBe('400.00');
+    expect(result.discountTotal).toBe('70.00');
+    expect(result.appliedDiscounts?.length).toBe(2);
+  });
+
+  it('skips expired or used up discounts', () => {
+    const result = priceDocument(
+      [{ quantity: 1, unitPrice: '100.00', taxes: [] }],
+      [
+        {
+          id: 'exp',
+          name: 'Expired',
+          type: 'FIXED',
+          value: '20',
+          scope: 'SUBSCRIPTION',
+          startDate: '2026-01-01',
+          endDate: '2026-01-31',
+        },
+        {
+          id: 'used',
+          name: 'Used up',
+          type: 'FIXED',
+          value: '20',
+          scope: 'SUBSCRIPTION',
+          usageLimit: 1,
+          usageCount: 1,
+        },
+      ],
+      '2026-06-01',
+    );
+    expect(result.discountTotal).toBe('0.00');
+    expect(result.total).toBe('100.00');
+  });
 });
 
 describe('subscription machine', () => {

@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Param,
   Patch,
   Post,
@@ -53,5 +54,13 @@ export class CustomersController {
     @Body(new ZodValidationPipe(updateCustomerSchema)) body: UpdateCustomerDto,
   ) {
     return this.customers.update(id, body);
+  }
+
+  @Post(':id/resend-invite')
+  @HttpCode(200)
+  resendInvite(
+    @Param(new ZodValidationPipe(idParamSchema)) { id }: IdParamDto,
+  ) {
+    return this.customers.resendInvite(id);
   }
 }

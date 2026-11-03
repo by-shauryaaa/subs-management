@@ -21,7 +21,11 @@ export async function createInvoiceForPeriod(
       plan: true,
       paymentTerm: true,
       customer: { include: { user: { select: { name: true, email: true } } } },
-      lines: { include: { taxes: true }, orderBy: { sequence: 'asc' } },
+      lines: {
+        include: { taxes: true, variant: { select: { productId: true } } },
+        orderBy: { sequence: 'asc' },
+      },
+      discounts: { include: { discount: true }, orderBy: { createdAt: 'asc' } },
     },
   });
   const start = toIso(sub.startDate);
@@ -37,17 +41,37 @@ export async function createInvoiceForPeriod(
   if (existing) return null;
 
   const settings = await readSettings(tx);
+  const discountInputs = sub.discounts.map((sd) => ({
+    id: sd.discount.id,
+    name: sd.discount.name,
+    type: sd.discount.type,
+    value: sd.discount.value.toFixed(2),
+    scope: sd.discount.scope,
+    minPurchase: sd.discount.minPurchase?.toFixed(2) ?? null,
+    minQuantity: sd.discount.minQuantity,
+    startDate: toIso(sd.discount.startDate),
+    endDate: toIso(sd.discount.endDate),
+    usageLimit: sd.discount.usageLimit,
+    usageCount: sd.discount.usageCount,
+    isActive: sd.discount.isActive,
+  }));
+
   const pricing = priceDocument(
     sub.lines.map((l) => ({
       quantity: l.quantity,
       unitPrice: l.unitPrice.toFixed(2),
+      productId: l.variant?.productId ?? null,
+      isPlanFee: l.isPlanFee,
       taxes: l.taxes.map((t) => ({
         id: t.id,
         name: t.name,
         rate: t.rate.toFixed(2),
       })),
     })),
+    discountInputs,
+    from,
   );
+
   const confirm = settings.autoConfirmInvoices !== false;
   const number = await nextNumber(tx, 'INV', from.slice(0, 4));
   try {
@@ -69,7 +93,7 @@ export async function createInvoiceForPeriod(
           billingAddress: sub.customer.billingAddress,
           taxId: sub.customer.taxId,
         },
-        currency: settings.currency ?? 'INR',
+        currency: (settings.currency as string | undefined) ?? 'INR',
         subtotal: pricing.subtotal,
         discountTotal: pricing.discountTotal,
         taxTotal: pricing.taxTotal,
@@ -95,6 +119,22 @@ export async function createInvoiceForPeriod(
       },
       select: { id: true, number: true },
     });
+
+    // Record discount usages and increment usage count
+    for (const ad of pricing.appliedDiscounts ?? []) {
+      await tx.discountUsage.create({
+        data: {
+          discountId: ad.id,
+          invoiceId: invoice.id,
+          amount: ad.amount,
+        },
+      });
+      await tx.discount.update({
+        where: { id: ad.id },
+        data: { usageCount: { increment: 1 } },
+      });
+    }
+
     await tx.auditLog.create({
       data: {
         actorId,

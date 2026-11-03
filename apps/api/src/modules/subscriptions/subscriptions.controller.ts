@@ -1,9 +1,11 @@
+import { z } from 'zod';
 import {
   Body,
   Controller,
   Get,
   HttpCode,
   Param,
+  Delete,
   Patch,
   Post,
   Query,
@@ -74,6 +76,23 @@ export class SubscriptionsController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.subscriptions.update(id, body, user.sub);
+  }
+
+  @Post(':id/discounts')
+  attachDiscount(
+    @Param(idPipe) { id }: IdParamDto,
+    @Body(new ZodValidationPipe(z.object({ discountId: z.string().uuid() })))
+    body: { discountId: string },
+  ) {
+    return this.subscriptions.attachDiscount(id, body.discountId);
+  }
+
+  @Delete(':id/discounts/:discountId')
+  removeDiscount(
+    @Param(idPipe) { id }: IdParamDto,
+    @Param('discountId') discountId: string,
+  ) {
+    return this.subscriptions.removeDiscount(id, discountId);
   }
 
   @Post(':id/:action')

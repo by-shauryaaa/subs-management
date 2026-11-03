@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
 import type {
   CreateStaffDto,
@@ -15,6 +15,7 @@ import {
   paginate,
 } from '../../common/pagination/pagination.helper.js';
 import { pageArgs, parseSort } from '../../common/pagination/page.js';
+import { AuthService } from '../auth/auth.service.js';
 
 const userSelect = {
   id: true,
@@ -53,7 +54,10 @@ function toView({ passwordHash, customer, ...user }: UserRecord): UserView {
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    @Optional() private readonly auth?: AuthService,
+  ) {}
 
   async list(query: UserListQueryDto): Promise<PaginatedResult<UserView>> {
     const where: Prisma.UserWhereInput = {
@@ -85,13 +89,16 @@ export class UsersService {
     return paginate(rows.map(toView), total, query.page, query.pageSize);
   }
 
-  /** Creates a STAFF user without a password; the invite sets it (AUTH-05). */
+  /** Creates a STAFF user without a password; sends the invite (AUTH-05). */
   async createStaff(dto: CreateStaffDto): Promise<UserView> {
     try {
       const user = await this.prisma.user.create({
         data: { ...dto, role: 'STAFF' },
         select: userSelect,
       });
+      if (this.auth) {
+        await this.auth.sendInvite(user.id);
+      }
       return toView(user);
     } catch (error) {
       if (isUniqueViolation(error)) {

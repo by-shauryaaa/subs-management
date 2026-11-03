@@ -4,6 +4,7 @@ import { PrismaClient, type Role } from '@prisma/client';
 import { loadEnvironment } from '../../config/environment.js';
 import { DomainError } from '../../common/errors/domain.error.js';
 import { isUniqueViolation } from '../../common/errors/prisma-errors.js';
+import { MailService } from '../../common/mail/mail.service.js';
 import { randomToken, sha256, signAccess } from './tokens.js';
 
 export interface Session {
@@ -25,7 +26,10 @@ const invalidCredentials = () =>
 export class AuthService {
   private readonly env = loadEnvironment();
 
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly mail: MailService,
+  ) {}
 
   async login(email: string, password: string): Promise<Session> {
     const user = await this.prisma.user.findUnique({
@@ -139,6 +143,120 @@ export class AuthService {
       where: { id: userId },
       data: { passwordHash: await hash(next) },
     });
+  }
+
+  /** Generates an auth token (reset or invite) and stores its SHA-256 hash. */
+  async createAuthToken(
+    userId: string,
+    type: 'PASSWORD_RESET' | 'INVITE',
+    ttlHours: number,
+  ): Promise<string> {
+    const raw = randomToken();
+    await this.prisma.authToken.create({
+      data: {
+        userId,
+        type,
+        tokenHash: sha256(raw),
+        expiresAt: new Date(Date.now() + ttlHours * 3600_000),
+      },
+    });
+    return raw;
+  }
+
+  /** Sends a password reset email if the user exists and is active. */
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+    });
+    if (!user || !user.isActive) return;
+    const token = await this.createAuthToken(user.id, 'PASSWORD_RESET', 24);
+    const resetUrl = `${this.env.WEB_URL}/reset-password?token=${token}`;
+    await this.mail.sendPasswordReset(user.email, resetUrl);
+  }
+
+  /** Validates the reset token and sets a new password. */
+  async resetPassword(token: string, nextPass: string): Promise<void> {
+    const tokenHash = sha256(token);
+    const record = await this.prisma.authToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+    if (
+      !record ||
+      record.type !== 'PASSWORD_RESET' ||
+      record.usedAt ||
+      record.expiresAt < new Date() ||
+      !record.user.isActive
+    ) {
+      throw new DomainError(
+        'INVALID_TOKEN',
+        'This reset link is invalid or has expired',
+        400,
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: record.userId },
+        data: { passwordHash: await hash(nextPass) },
+      });
+      await tx.authToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      });
+      await tx.refreshToken.updateMany({
+        where: { userId: record.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    });
+  }
+
+  /** Validates an invite token and sets the initial password. */
+  async acceptInvite(token: string, nextPass: string): Promise<void> {
+    const tokenHash = sha256(token);
+    const record = await this.prisma.authToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+    if (
+      !record ||
+      record.type !== 'INVITE' ||
+      record.usedAt ||
+      record.expiresAt < new Date() ||
+      !record.user.isActive
+    ) {
+      throw new DomainError(
+        'INVALID_TOKEN',
+        'This invitation link is invalid or has expired',
+        400,
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: record.userId },
+        data: { passwordHash: await hash(nextPass) },
+      });
+      await tx.authToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      });
+      await tx.refreshToken.updateMany({
+        where: { userId: record.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    });
+  }
+
+  /** Sends an invite email for a staff or customer account. */
+  async sendInvite(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) return;
+    const token = await this.createAuthToken(user.id, 'INVITE', 168); // 7 days
+    const inviteUrl = `${this.env.WEB_URL}/accept-invite?token=${token}`;
+    await this.mail.sendInvite(user.email, inviteUrl, user.name);
   }
 
   private async issue(userId: string): Promise<Session> {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
 import type {
   CreateCustomerDto,
@@ -16,6 +16,7 @@ import {
   paginate,
 } from '../../common/pagination/pagination.helper.js';
 import { pageArgs, parseSort } from '../../common/pagination/page.js';
+import { AuthService } from '../auth/auth.service.js';
 
 const customerSelect = {
   id: true,
@@ -67,7 +68,10 @@ const emailTaken = () =>
 
 @Injectable()
 export class CustomersService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    @Optional() private readonly auth?: AuthService,
+  ) {}
 
   async list(
     query: CustomerListQueryDto,
@@ -122,11 +126,33 @@ export class CustomersService {
         },
         select: customerSelect,
       });
+      if (this.auth) {
+        await this.auth.sendInvite(customer.userId);
+      }
       return toView(customer);
     } catch (error) {
       if (isUniqueViolation(error)) throw emailTaken();
       throw error;
     }
+  }
+
+  async resendInvite(id: string): Promise<{ success: boolean; message: string }> {
+    const customer = await this.prisma.customer.findUnique({
+      where: { id },
+      include: { user: true },
+    });
+    if (!customer) throw notFound('Customer');
+    if (customer.user.passwordHash) {
+      throw new DomainError(
+        'ALREADY_ACTIVE',
+        'This customer has already set their password',
+        400,
+      );
+    }
+    if (this.auth) {
+      await this.auth.sendInvite(customer.user.id);
+    }
+    return { success: true, message: 'Invitation resent' };
   }
 
   async update(id: string, dto: UpdateCustomerDto): Promise<CustomerView> {

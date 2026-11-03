@@ -36,6 +36,18 @@ const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: passwordSchema,
 });
+const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: passwordSchema,
+});
+const acceptInviteSchema = z.object({
+  token: z.string().min(1),
+  password: passwordSchema,
+});
+
 const COOKIE = 'brightloop_refresh';
 
 @Controller('auth')
@@ -83,6 +95,39 @@ export class AuthController {
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     await this.auth.logout(this.cookie(req));
     res.clearCookie(COOKIE, { path: '/api/v1/auth' });
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(200)
+  async forgotPassword(
+    @Body(new ZodValidationPipe(forgotPasswordSchema))
+    body: z.infer<typeof forgotPasswordSchema>,
+  ) {
+    await this.auth.forgotPassword(body.email);
+    return { message: 'If an account exists, a reset link has been sent.' };
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(200)
+  async resetPassword(
+    @Body(new ZodValidationPipe(resetPasswordSchema))
+    body: z.infer<typeof resetPasswordSchema>,
+  ) {
+    await this.auth.resetPassword(body.token, body.password);
+    return { message: 'Password saved. You can now sign in.' };
+  }
+
+  @Public()
+  @Post('accept-invite')
+  @HttpCode(200)
+  async acceptInvite(
+    @Body(new ZodValidationPipe(acceptInviteSchema))
+    body: z.infer<typeof acceptInviteSchema>,
+  ) {
+    await this.auth.acceptInvite(body.token, body.password);
+    return { message: 'Password saved. You can now sign in.' };
   }
 
   @Get('me')

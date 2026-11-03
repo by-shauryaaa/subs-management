@@ -7,7 +7,9 @@ import {
   Param,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import {
@@ -31,6 +33,8 @@ import { notFound } from '../../common/errors/prisma-errors.js';
 import { paginate } from '../../common/pagination/pagination.helper.js';
 import { pageArgs } from '../../common/pagination/page.js';
 import { ZodValidationPipe } from '../../common/pipes/zod-validation.pipe.js';
+import { InvoicePdfService } from '../../common/pdf/invoice-pdf.service.js';
+import { MailService } from '../../common/mail/mail.service.js';
 import { readSettings } from '../config/config.controllers.js';
 import { toDate, toIso } from '../subscriptions/numbering.js';
 
@@ -120,10 +124,14 @@ const include = {
 @Roles('ADMIN', 'STAFF')
 @Controller()
 export class InvoicesController {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    private readonly pdfService: InvoicePdfService,
+    private readonly mailService: MailService,
+  ) {}
 
   private async today() {
-    return todayInTz((await readSettings(this.prisma)).timezone);
+    return todayInTz((await readSettings(this.prisma)).timezone as string | undefined);
   }
 
   @Get('invoices')
@@ -182,6 +190,55 @@ export class InvoicesController {
         recordedBy: p.recordedBy.name,
       })),
     };
+  }
+
+  @Get('invoices/:id/pdf')
+  async pdf(@Param(idPipe) { id }: IdParamDto, @Res() res: Response) {
+    const inv = await this.get({ id });
+    const settings = await readSettings(this.prisma);
+    const snap = (inv.customerSnapshot ?? {}) as Record<string, unknown>;
+    const pdfBuffer = await this.pdfService.generate({
+      number: inv.number,
+      invoiceDate: inv.invoiceDate,
+      dueDate: inv.dueDate,
+      periodStart: inv.periodStart,
+      periodEnd: inv.periodEnd,
+      currency: inv.currency,
+      status: inv.status,
+      company: {
+        name: typeof settings.companyName === 'string' ? settings.companyName : 'Brightloop Software',
+        address: typeof settings.companyAddress === 'string' ? settings.companyAddress : undefined,
+        email: typeof settings.companyEmail === 'string' ? settings.companyEmail : undefined,
+        phone: typeof settings.companyPhone === 'string' ? settings.companyPhone : undefined,
+        taxId: typeof settings.companyTaxId === 'string' ? settings.companyTaxId : undefined,
+      },
+      customer: {
+        name: typeof snap.name === 'string' ? snap.name : inv.customer,
+        email: typeof snap.email === 'string' ? snap.email : '',
+        companyName: typeof snap.companyName === 'string' ? snap.companyName : undefined,
+        billingAddress: typeof snap.billingAddress === 'string' ? snap.billingAddress : undefined,
+        taxId: typeof snap.taxId === 'string' ? snap.taxId : undefined,
+      },
+      lines: inv.lines.map((l) => ({
+        description: l.description,
+        quantity: l.quantity,
+        unitPrice: l.unitPrice,
+        amount: l.total,
+      })),
+      subtotal: inv.subtotal,
+      discountTotal: inv.discountTotal,
+      taxTotal: inv.taxTotal,
+      total: inv.total,
+      amountPaid: inv.amountPaid,
+      amountDue: inv.amountDue,
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${inv.number.replace(/\//g, '_')}.pdf"`,
+    );
+    res.send(pdfBuffer);
   }
 
   @Post('invoices/:id/confirm')
@@ -269,6 +326,54 @@ export class InvoicesController {
   @Post('invoices/:id/send')
   @HttpCode(200)
   async send(@Param(idPipe) { id }: IdParamDto) {
+    const inv = await this.get({ id });
+    const snap = (inv.customerSnapshot ?? {}) as Record<string, unknown>;
+    const email = typeof snap.email === 'string' ? snap.email : undefined;
+    if (email) {
+      const settings = await readSettings(this.prisma);
+      const pdfBuffer = await this.pdfService.generate({
+        number: inv.number,
+        invoiceDate: inv.invoiceDate,
+        dueDate: inv.dueDate,
+        periodStart: inv.periodStart,
+        periodEnd: inv.periodEnd,
+        currency: inv.currency,
+        status: inv.status,
+        company: {
+          name: typeof settings.companyName === 'string' ? settings.companyName : 'Brightloop Software',
+          address: typeof settings.companyAddress === 'string' ? settings.companyAddress : undefined,
+          email: typeof settings.companyEmail === 'string' ? settings.companyEmail : undefined,
+          phone: typeof settings.companyPhone === 'string' ? settings.companyPhone : undefined,
+          taxId: typeof settings.companyTaxId === 'string' ? settings.companyTaxId : undefined,
+        },
+        customer: {
+          name: typeof snap.name === 'string' ? snap.name : inv.customer,
+          email,
+          companyName: typeof snap.companyName === 'string' ? snap.companyName : undefined,
+          billingAddress: typeof snap.billingAddress === 'string' ? snap.billingAddress : undefined,
+          taxId: typeof snap.taxId === 'string' ? snap.taxId : undefined,
+        },
+        lines: inv.lines.map((l) => ({
+          description: l.description,
+          quantity: l.quantity,
+          unitPrice: l.unitPrice,
+          amount: l.total,
+        })),
+        subtotal: inv.subtotal,
+        discountTotal: inv.discountTotal,
+        taxTotal: inv.taxTotal,
+        total: inv.total,
+        amountPaid: inv.amountPaid,
+        amountDue: inv.amountDue,
+      });
+
+      await this.mailService.sendInvoice(
+        email,
+        inv.number,
+        pdfBuffer,
+      );
+    }
+
     await this.prisma.invoice.update({
       where: { id },
       data: { sentAt: new Date() },

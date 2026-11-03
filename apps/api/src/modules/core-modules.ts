@@ -26,5 +26,9 @@ export class ConfigModule {}
 })
 export class SubscriptionsModule {}
 
-@Module({ controllers: [InvoicesController] })
+@Module({
+  controllers: [InvoicesController],
+  providers: [InvoicesController],
+  exports: [InvoicesController],
+})
 export class InvoicesModule {}

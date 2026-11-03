@@ -12,6 +12,9 @@ import { ProductsModule } from './modules/products/products.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { BillingModule } from './modules/billing/billing.js';
+import { DiscountsModule } from './modules/discounts/discounts.module.js';
+import { ReportsModule } from './modules/reports/reports.module.js';
+import { PortalModule } from './modules/portal/portal.module.js';
 import {
   ConfigModule,
   InvoicesModule,
@@ -32,6 +35,9 @@ import {
     SubscriptionsModule,
     InvoicesModule,
     BillingModule,
+    DiscountsModule,
+    ReportsModule,
+    PortalModule,
   ],
   controllers: [AppController],
   providers: [

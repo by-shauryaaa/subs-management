@@ -77,7 +77,7 @@
 |---|---|---|---|---|---|
 | P1-01 | Signup, login, refresh, logout, me | M2 | 1:30–2:00 | ⬜ | |
 | P1-02 | RBAC & ownership | M2 | 2:00–2:15 | ⬜ | |
-| P1-03 | Forgot/reset password & invites | M2 | 2:15–2:30 | ⬜ | |
+| P1-03 | Forgot/reset password & invites | M2 | 2:15–2:30 | ✅ | 2026-11-04 IST; tokens, emails, reset/accept endpoints |
 | P1-04 | Staff management | M1 | 2:00–2:30 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
 | P1-05 | Customers | M1 | 1:30–2:00 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
 | P1-06 | Web auth flows | M3 | 1:30–2:05 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
@@ -109,22 +109,22 @@
 | P4-01 | Invoice generator | M1 | 4:30–5:00 | ⬜ | |
 | P4-02 | Billing run & lifecycle jobs | M1 | 5:00–5:45 | ⬜ | |
 | P4-03 | Invoice actions | M2 | 4:30–5:05 | ⬜ | |
-| P4-04 | Invoice PDF & send | M2 | 5:05–5:45 | ⬜ | |
+| P4-04 | Invoice PDF & send | M2 | 5:05–5:45 | ✅ | 2026-11-04 IST; pdfkit generation, email dispatch |
 | P4-05 | Invoices & billing-runs UI | M3 | 4:30–5:45 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 
 ### Phase 5 — Discounts & payments
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
-| P5-01 | Discount rules | M2 | 4:05–4:30 | ⬜ | |
-| P5-02 | Discounts on subscriptions | M1 | 5:45–6:30 | ⬜ | |
+| P5-01 | Discount rules | M2 | 4:05–4:30 | ✅ | 2026-11-04 IST; Discounts CRUD & schema |
+| P5-02 | Discounts on subscriptions | M1 | 5:45–6:30 | ✅ | 2026-11-04 IST; attach/detach, pricing engine, invoice generator |
 | P5-03 | Payments | M2 | 5:45–6:15 | ⬜ | |
 
 ### Phase 6 — Portal, reports, settings
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
-| P6-01 | Portal API | M1 | 6:30–6:55 | ⬜ | |
+| P6-01 | Portal API | M1 | 6:30–6:55 | ✅ | 2026-11-04 IST; home, subscriptions, invoices, profile |
 | P6-02 | Portal UI | M3 | 6:50–7:30 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
-| P6-03 | Reports API | M2 | 6:15–6:45 | ⬜ | |
+| P6-03 | Reports API | M2 | 6:15–6:45 | ✅ | 2026-11-04 IST; summary, revenue-series, status distribution, overdue |
 | P6-04 | Finance dashboard UI | M3 | 6:05–6:50 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
 | P6-05 | Settings UI | M3 | 5:45–6:05 | ⬜ | |
 
@@ -142,6 +142,15 @@
 
 ## Work log (newest first)
 
+### 2026-11-04 03:52 (IST) — Auth Invites & Reset, Invoice PDF & Send, Discounts Engine & CRUD, Reports & Portal APIs — Full Feature Completion
+- Status: ✅ Done
+- What changed:
+  1. Auth & Invites (P1-03): Added `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /auth/accept-invite`, `POST /customers/:id/resend-invite`, and automated invite triggers with AuthToken generation on staff and customer creation.
+  2. Invoice PDF & Send (P4-04): Implemented `InvoicePdfService` using pdfkit, rendering company & customer headers, itemized tables, totals and status. Added `GET /invoices/:id/pdf` and updated `POST /invoices/:id/send` to deliver emails with PDF attachments.
+  3. Discounts Engine & Module (P5-01, P5-02): Updated `priceDocument` in `@brightloop/shared` with full product-scoped & subscription-scoped discount calculation, eligibility checking, and proportional rounding. Added DiscountsModule (CRUD `GET/POST/PATCH /discounts`), `POST /subscriptions/:id/discounts` (attach), and `DELETE /subscriptions/:id/discounts/:discountId` (remove), plus automated usage tracking and discount calculations during invoice generation.
+  4. Portal API (P6-01): Implemented `PortalModule` (`/portal/home`, `/portal/subscriptions`, `/portal/subscriptions/:id`, `/portal/subscriptions/:id/:action`, `/portal/invoices`, `/portal/invoices/:id/pdf`, `/portal/profile` GET/PATCH) with strict customer tenancy isolation.
+  5. Reports API (P6-03): Implemented `ReportsModule` (`/reports/summary`, `/reports/revenue-series`, `/reports/subscriptions-by-status`, `/reports/overdue`) calculating MRR (list price), collected revenue, invoiced, outstanding, and overdue balances.
+- Tests: Added `apps/api/test/features.spec.ts` testing auth reset/invite tokens, role guard isolation, reports and portal APIs. All 114 API unit tests, 48 shared tests, 10 web tests, full monorepo build, linting (0 warnings), and typecheck pass.
 ### 2026-10-31 16:32 (IST) — Core flow on branch `m1/core-flow` (auth, config, pricing, subscriptions, invoices, payments, billing) — M1
 - Status: 🟡 Demo-ready core; taken over from M2/M3 lanes at user request to finish in time.
 - What changed: Auth (login/signup/refresh cookie rotation/logout/me/change-password, HS256 JWT guard, `@Roles`, `@CurrentUser`) applied to every controller; taxes, payment terms, plans, settings APIs; shared `priceDocument` + subscription state machine; subscriptions CRUD/preview/transitions/renewal/history with plan-fee line and `allowedActions`; invoice generator (idempotent per period, snapshot, auto-confirm), invoice list/views/detail/confirm/bulk/cancel/send; payments (row lock, ≤ due, auto PAID, admin delete); billing run with advisory lock, activation, catch-up, expiry close, `BillingRun` log. Seed adds 4 plans, subscriptions in every status, invoices (paid/partial/overdue).

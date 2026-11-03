@@ -62,7 +62,7 @@ const detailInclude = {
   paymentTerm: true,
   renewal: { select: { id: true, number: true } },
   lines: {
-    include: { taxes: { select: { id: true, name: true, rate: true } } },
+    include: { taxes: { select: { id: true, name: true, rate: true } }, variant: { select: { productId: true } } },
     orderBy: { sequence: 'asc' },
   },
   discounts: { include: { discount: true } },
@@ -468,6 +468,63 @@ export class SubscriptionsService {
     return result;
   }
 
+  async attachDiscount(subscriptionId: string, discountId: string) {
+    const sub = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+    });
+    if (!sub) throw notFound('Subscription');
+    if (!EDITABLE.includes(sub.status)) {
+      throw new DomainError(
+        'INVALID_STATUS',
+        'Discounts can only be attached to draft or quotation subscriptions',
+        400,
+      );
+    }
+    const discount = await this.prisma.discount.findUnique({
+      where: { id: discountId },
+    });
+    if (!discount) throw notFound('Discount');
+    if (!discount.isActive) {
+      throw new DomainError('DISCOUNT_INACTIVE', 'This discount is inactive', 400);
+    }
+    if (discount.usageLimit != null && discount.usageCount >= discount.usageLimit) {
+      throw new DomainError('DISCOUNT_EXHAUSTED', 'This discount has reached its usage limit', 400);
+    }
+
+    await this.prisma.subscriptionDiscount.upsert({
+      where: {
+        subscriptionId_discountId: {
+          subscriptionId,
+          discountId,
+        },
+      },
+      create: { subscriptionId, discountId },
+      update: {},
+    });
+
+    return this.get(subscriptionId);
+  }
+
+  async removeDiscount(subscriptionId: string, discountId: string) {
+    const sub = await this.prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+    });
+    if (!sub) throw notFound('Subscription');
+    if (!EDITABLE.includes(sub.status)) {
+      throw new DomainError(
+        'INVALID_STATUS',
+        'Discounts can only be removed from draft or quotation subscriptions',
+        400,
+      );
+    }
+
+    await this.prisma.subscriptionDiscount.deleteMany({
+      where: { subscriptionId, discountId },
+    });
+
+    return this.get(subscriptionId);
+  }
+
   private audit(
     tx: Prisma.TransactionClient,
     entityId: string,
@@ -497,11 +554,25 @@ export class SubscriptionsService {
       description: l.description,
       quantity: l.quantity,
       unitPrice: l.unitPrice.toFixed(2),
-      isPlanFee: l.isPlanFee,
+      isPlanFee: l.isPlanFee, productId: l.variant?.productId ?? null,
       taxIds: l.taxes.map((t) => t.id),
       taxes: l.taxes.map((t) => ({ ...t, rate: t.rate.toFixed(2) })),
     }));
-    const pricing = priceDocument(lines);
+    const discountInputs = sub.discounts.map((sd) => ({
+      id: sd.discount.id,
+      name: sd.discount.name,
+      type: sd.discount.type,
+      value: sd.discount.value.toFixed(2),
+      scope: sd.discount.scope,
+      minPurchase: sd.discount.minPurchase?.toFixed(2) ?? null,
+      minQuantity: sd.discount.minQuantity,
+      startDate: toIso(sd.discount.startDate) ?? undefined,
+      endDate: toIso(sd.discount.endDate) ?? undefined,
+      usageLimit: sd.discount.usageLimit,
+      usageCount: sd.discount.usageCount,
+      isActive: sd.discount.isActive,
+    }));
+    const pricing = priceDocument(lines, discountInputs, toIso(sub.startDate) ?? undefined);
     return {
       id: sub.id,
       number: sub.number,
