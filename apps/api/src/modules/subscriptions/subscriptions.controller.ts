@@ -11,8 +11,10 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  type FromTemplateDto,
   type IdParamDto,
   type SubscriptionAction,
+  fromTemplateSchema,
   idParamSchema,
 } from '@brightloop/shared';
 import {
@@ -51,6 +53,14 @@ export class SubscriptionsController {
     @CurrentUser() user: AuthUser,
   ) {
     return this.subscriptions.create(body, user.sub);
+  }
+
+  @Post('from-template')
+  createFromTemplate(
+    @Body(new ZodValidationPipe(fromTemplateSchema)) body: FromTemplateDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.subscriptions.createFromTemplate(body, user.sub);
   }
 
   @Get(':id')

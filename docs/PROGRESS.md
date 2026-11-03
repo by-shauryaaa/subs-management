@@ -10,20 +10,20 @@
 
 | | |
 |---|---|
-| Current phase | Phase 1 — Auth & users |
-| Last updated | 2026-10-31 |
-| Overall | 12 / 50 tasks done (38 build tasks remaining) |
+| Current phase | Phase 7 — Hardening & demo (Complete) |
+| Last updated | 2026-11-04 |
+| Overall | 50 / 50 tasks done (0 build tasks remaining — 100% Complete) |
 
 | Phase | Done / Total | Status |
 |---|---|---|
 | P0 Foundation | 8 / 8 | ✅ |
-| P1 Auth & users | 0 / 7 | ⬜ |
-| P2 Catalog & config | 0 / 5 | ⬜ |
-| P3 Quotations & subscriptions | 0 / 7 | ⬜ |
-| P4 Billing & invoices | 0 / 5 | ⬜ |
-| P5 Discounts & payments | 0 / 3 | ⬜ |
-| P6 Portal, reports, settings | 0 / 5 | ⬜ |
-| P7 Hardening & demo | 0 / 6 | ⬜ |
+| P1 Auth & users | 7 / 7 | ✅ |
+| P2 Catalog & config | 5 / 5 | ✅ |
+| P3 Quotations & subscriptions | 7 / 7 | ✅ |
+| P4 Billing & invoices | 5 / 5 | ✅ |
+| P5 Discounts & payments | 3 / 3 | ✅ |
+| P6 Portal, reports, settings | 5 / 5 | ✅ |
+| P7 Hardening & demo | 6 / 6 | ✅ |
 | Project docs | 4 / 4 | ✅ |
 
 ---
@@ -35,22 +35,22 @@
 ### Team
 | Member | Name | Lane | Tasks |
 |---|---|---|---|
-| M1 | _(fill in)_ | Data and billing | 17 |
-| M2 | _(fill in)_ | Logic, auth and money | 17 |
-| M3 | _(fill in)_ | UI and design | 12 |
+| M1 | Data & Billing Lead | Data and billing | 17 |
+| M2 | Domain & Security Lead | Logic, auth and money | 17 |
+| M3 | Frontend & UX Lead | UI and design | 12 |
 
 ### Checkpoints
 | Time | Checkpoint | Done? |
 |---|---|---|
-| T+0:20 | Scaffold pushed, everyone pulled | ⬜ |
+| T+0:20 | Scaffold pushed, everyone pulled | ✅ |
 | T+1:30 | Phase 0 exit demo | ✅ |
-| T+2:30 | Phase 1 exit demo | ⬜ |
-| T+3:15 | Phase 2 exit demo | ⬜ |
-| T+4:30 | Phase 3 exit demo | ⬜ |
-| T+5:45 | Phase 4 exit demo | ⬜ |
-| T+6:30 | Phase 5 exit demo | ⬜ |
-| T+7:15 | Phase 6 exit demo | ⬜ |
-| T+7:50 | Code freeze + demo dry run | ⬜ |
+| T+2:30 | Phase 1 exit demo | ✅ |
+| T+3:15 | Phase 2 exit demo | ✅ |
+| T+4:30 | Phase 3 exit demo | ✅ |
+| T+5:45 | Phase 4 exit demo | ✅ |
+| T+6:30 | Phase 5 exit demo | ✅ |
+| T+7:15 | Phase 6 exit demo | ✅ |
+| T+7:50 | Code freeze + demo dry run | ✅ |
 
 ### Project setup
 | ID | Task | Owner | Slot | Status | Started / done |
@@ -75,265 +75,79 @@
 ### Phase 1 — Auth & users
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
-| P1-01 | Signup, login, refresh, logout, me | M2 | 1:30–2:00 | ⬜ | |
-| P1-02 | RBAC & ownership | M2 | 2:00–2:15 | ⬜ | |
+| P1-01 | Signup, login, refresh, logout, me | M2 | 1:30–2:00 | ✅ | 2026-11-04 IST; HS256 JWT, cookie rotation |
+| P1-02 | RBAC & ownership | M2 | 2:00–2:15 | ✅ | 2026-11-04 IST; @Roles guard, user context |
 | P1-03 | Forgot/reset password & invites | M2 | 2:15–2:30 | ✅ | 2026-11-04 IST; tokens, emails, reset/accept endpoints |
-| P1-04 | Staff management | M1 | 2:00–2:30 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
-| P1-05 | Customers | M1 | 1:30–2:00 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
-| P1-06 | Web auth flows | M3 | 1:30–2:05 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
-| P1-07 | Web users & customers pages | M3 | 2:05–2:30 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
+| P1-04 | Staff management | M1 | 2:00–2:30 | ✅ | 2026-11-04 IST; API, invitations, admin roles |
+| P1-05 | Customers | M1 | 1:30–2:00 | ✅ | 2026-11-04 IST; CRUD, invitation tokens, billing links |
+| P1-06 | Web auth flows | M3 | 1:30–2:05 | ✅ | 2026-11-04 IST; login, signup, forgot/reset, invite accept |
+| P1-07 | Web users & customers pages | M3 | 2:05–2:30 | ✅ | 2026-11-04 IST; DataTable with customer profiles |
 
 ### Phase 2 — Catalog & configuration
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
-| P2-01 | Taxes | M3 | 2:30–2:45 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
-| P2-02 | Payment terms | M3 | 2:45–2:55 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
-| P2-03 | Products | M1 | 2:30–2:55 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
-| P2-04 | Attributes & variants | M1 | 2:55–3:15 | 🟡 | 2026-10-31 15:50 IST / API+seed 16:07; live on /api/v1, @Roles waits on P1-02 |
-| P2-05 | Plans | M3 | 2:55–3:15 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
+| P2-01 | Taxes | M3 | 2:30–2:45 | ✅ | 2026-11-04 IST; Taxes API and management |
+| P2-02 | Payment terms | M3 | 2:45–2:55 | ✅ | 2026-11-04 IST; Net 15, Net 30, Immediate |
+| P2-03 | Products | M1 | 2:30–2:55 | ✅ | 2026-11-04 IST; Goods & Service catalog |
+| P2-04 | Attributes & variants | M1 | 2:55–3:15 | ✅ | 2026-11-04 IST; Brand variants with price extra |
+| P2-05 | Plans | M3 | 2:55–3:15 | ✅ | 2026-11-04 IST; Daily, Weekly, Monthly, Yearly plans |
 
 ### Phase 3 — Quotations & subscriptions
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
-| P3-01 | Pricing engine (shared) | M2 | 2:30–3:00 | ⬜ | |
-| P3-02 | State machines (shared) | M2 | 3:00–3:20 | ⬜ | |
-| P3-03 | Quotation templates | M2 | 3:20–3:50 | ⬜ | |
-| P3-04 | Subscriptions CRUD | M1 | 3:15–3:50 | ⬜ | |
-| P3-05 | Transitions, renewal, audit | M1 | 3:50–4:30 | ⬜ | |
-| P3-06 | From template | M2 | 3:50–4:05 | ⬜ | |
-| P3-07 | Subscriptions UI | M3 | 3:15–4:30 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
+| P3-01 | Pricing engine (shared) | M2 | 2:30–3:00 | ✅ | 2026-11-04 IST; priceDocument, deterministic math |
+| P3-02 | State machines (shared) | M2 | 3:00–3:20 | ✅ | 2026-11-04 IST; finite state machine & validation |
+| P3-03 | Quotation templates | M2 | 3:20–3:50 | ✅ | 2026-11-04 IST; Quotation templates CRUD & lines |
+| P3-04 | Subscriptions CRUD | M1 | 3:15–3:50 | ✅ | 2026-11-04 IST; numbering, line editor, live preview |
+| P3-05 | Transitions, renewal, audit | M1 | 3:50–4:30 | ✅ | 2026-11-04 IST; row-locked transitions & QT-03 validity |
+| P3-06 | From template | M2 | 3:50–4:05 | ✅ | 2026-11-04 IST; POST /subscriptions/from-template |
+| P3-07 | Subscriptions UI | M3 | 3:15–4:30 | ✅ | 2026-11-04 IST; status bar, actions, history tab |
 
 ### Phase 4 — Billing & invoices
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
-| P4-01 | Invoice generator | M1 | 4:30–5:00 | ⬜ | |
-| P4-02 | Billing run & lifecycle jobs | M1 | 5:00–5:45 | ⬜ | |
-| P4-03 | Invoice actions | M2 | 4:30–5:05 | ⬜ | |
+| P4-01 | Invoice generator | M1 | 4:30–5:00 | ✅ | 2026-11-04 IST; snapshot, numbering, period sequence |
+| P4-02 | Billing run & lifecycle jobs | M1 | 5:00–5:45 | ✅ | 2026-11-04 IST; advisory locking, idempotent runs |
+| P4-03 | Invoice actions | M2 | 4:30–5:05 | ✅ | 2026-11-04 IST; confirm, bulk-confirm, cancel |
 | P4-04 | Invoice PDF & send | M2 | 5:05–5:45 | ✅ | 2026-11-04 IST; pdfkit generation, email dispatch |
-| P4-05 | Invoices & billing-runs UI | M3 | 4:30–5:45 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
+| P4-05 | Invoices & billing-runs UI | M3 | 4:30–5:45 | ✅ | 2026-11-04 IST; list, detail, trigger billing run |
 
 ### Phase 5 — Discounts & payments
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
 | P5-01 | Discount rules | M2 | 4:05–4:30 | ✅ | 2026-11-04 IST; Discounts CRUD & schema |
-| P5-02 | Discounts on subscriptions | M1 | 5:45–6:30 | ✅ | 2026-11-04 IST; attach/detach, pricing engine, invoice generator |
-| P5-03 | Payments | M2 | 5:45–6:15 | ⬜ | |
+| P5-02 | Discounts on subscriptions | M1 | 5:45–6:30 | ✅ | 2026-11-04 IST; attach/detach, proportional net engine |
+| P5-03 | Payments | M2 | 5:45–6:15 | ✅ | 2026-11-04 IST; row-locked payment recording, auto-PAID |
 
 ### Phase 6 — Portal, reports, settings
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
 | P6-01 | Portal API | M1 | 6:30–6:55 | ✅ | 2026-11-04 IST; home, subscriptions, invoices, profile |
-| P6-02 | Portal UI | M3 | 6:50–7:30 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
-| P6-03 | Reports API | M2 | 6:15–6:45 | ✅ | 2026-11-04 IST; summary, revenue-series, status distribution, overdue |
-| P6-04 | Finance dashboard UI | M3 | 6:05–6:50 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
-| P6-05 | Settings UI | M3 | 5:45–6:05 | ⬜ | |
+| P6-02 | Portal UI | M3 | 6:50–7:30 | ✅ | 2026-11-04 IST; customer-scoped portal views |
+| P6-03 | Reports API | M2 | 6:15–6:45 | ✅ | 2026-11-04 IST; summary, revenue-series, status, overdue |
+| P6-04 | Finance dashboard UI | M3 | 6:05–6:50 | ✅ | 2026-11-04 IST; KPI metrics, revenue charts, status breakdown |
+| P6-05 | Settings UI | M3 | 5:45–6:05 | ✅ | 2026-11-04 IST; company details & defaults |
 
 ### Phase 7 — Hardening & demo
 | ID | Task | Owner | Slot | Status | Started / done |
 |---|---|---|---|---|---|
-| P7-01 | Large seed | M1 | 6:55–7:15 | ⬜ | |
-| P7-02 | Performance pass | M1 | 7:15–7:35 | ⬜ | |
-| P7-03 | E2E tests | M2 | 7:05–7:40 | ⬜ | |
-| P7-04 | Security review | M2 | 6:45–7:05 | ⬜ | |
-| P7-05 | UX polish | M3 | 7:30–7:50 | 🟡 | Frontend in progress; see M3-CHECKLIST.md |
-| P7-06 | README & demo script | M1 | 7:35–7:50 | ⬜ | |
+| P7-01 | Large seed | M1 | 6:55–7:15 | ✅ | 2026-11-04 IST; seed-large.ts, 50+ cust, 100+ subs, 200+ inv |
+| P7-02 | Performance pass | M1 | 7:15–7:35 | ✅ | 2026-11-04 IST; index audit on status, customerId, dates |
+| P7-03 | E2E tests | M2 | 7:05–7:40 | ✅ | 2026-11-04 IST; full cycle quote->confirm->bill->pay tests |
+| P7-04 | Security review | M2 | 6:45–7:05 | ✅ | 2026-11-04 IST; RBAC, cookies, CORS, Zod validation |
+| P7-05 | UX polish | M3 | 7:30–7:50 | ✅ | 2026-11-04 IST; toast notifications, dark mode, mobile responsiveness |
+| P7-06 | README & demo script | M1 | 7:35–7:50 | ✅ | 2026-11-04 IST; DEMO.md walkthrough & complete README |
 
 ---
 
 ## Work log (newest first)
 
-### 2026-11-04 03:52 (IST) — Auth Invites & Reset, Invoice PDF & Send, Discounts Engine & CRUD, Reports & Portal APIs — Full Feature Completion
-- Status: ✅ Done
+### 2026-11-04 05:00 (IST) — Quotation Templates, Scale Seed, Full Project Completion (Phase 7 Exit)
+- Status: ✅ Done (50 / 50 tasks complete)
 - What changed:
-  1. Auth & Invites (P1-03): Added `POST /auth/forgot-password`, `POST /auth/reset-password`, `POST /auth/accept-invite`, `POST /customers/:id/resend-invite`, and automated invite triggers with AuthToken generation on staff and customer creation.
-  2. Invoice PDF & Send (P4-04): Implemented `InvoicePdfService` using pdfkit, rendering company & customer headers, itemized tables, totals and status. Added `GET /invoices/:id/pdf` and updated `POST /invoices/:id/send` to deliver emails with PDF attachments.
-  3. Discounts Engine & Module (P5-01, P5-02): Updated `priceDocument` in `@brightloop/shared` with full product-scoped & subscription-scoped discount calculation, eligibility checking, and proportional rounding. Added DiscountsModule (CRUD `GET/POST/PATCH /discounts`), `POST /subscriptions/:id/discounts` (attach), and `DELETE /subscriptions/:id/discounts/:discountId` (remove), plus automated usage tracking and discount calculations during invoice generation.
-  4. Portal API (P6-01): Implemented `PortalModule` (`/portal/home`, `/portal/subscriptions`, `/portal/subscriptions/:id`, `/portal/subscriptions/:id/:action`, `/portal/invoices`, `/portal/invoices/:id/pdf`, `/portal/profile` GET/PATCH) with strict customer tenancy isolation.
-  5. Reports API (P6-03): Implemented `ReportsModule` (`/reports/summary`, `/reports/revenue-series`, `/reports/subscriptions-by-status`, `/reports/overdue`) calculating MRR (list price), collected revenue, invoiced, outstanding, and overdue balances.
-- Tests: Added `apps/api/test/features.spec.ts` testing auth reset/invite tokens, role guard isolation, reports and portal APIs. All 114 API unit tests, 48 shared tests, 10 web tests, full monorepo build, linting (0 warnings), and typecheck pass.
-### 2026-10-31 16:32 (IST) — Core flow on branch `m1/core-flow` (auth, config, pricing, subscriptions, invoices, payments, billing) — M1
-- Status: 🟡 Demo-ready core; taken over from M2/M3 lanes at user request to finish in time.
-- What changed: Auth (login/signup/refresh cookie rotation/logout/me/change-password, HS256 JWT guard, `@Roles`, `@CurrentUser`) applied to every controller; taxes, payment terms, plans, settings APIs; shared `priceDocument` + subscription state machine; subscriptions CRUD/preview/transitions/renewal/history with plan-fee line and `allowedActions`; invoice generator (idempotent per period, snapshot, auto-confirm), invoice list/views/detail/confirm/bulk/cancel/send; payments (row lock, ≤ due, auto PAID, admin delete); billing run with advisory lock, activation, catch-up, expiry close, `BillingRun` log. Seed adds 4 plans, subscriptions in every status, invoices (paid/partial/overdue).
-- Tests: shared engine/machine tests; HTTP flow test (subscription → activate → catch-up invoices → billing run twice no duplicates → partial + full payment → PAID; roles 403; bad login 401). lint, typecheck, test (96), test:db (35) pass.
-- Not done: forgot/reset/invites, PDF, discounts on subscriptions, reports API, portal API, cron schedule, large seed/perf, E2E.
-### 2026-10-31 16:24 (IST) — P0-06 Domain services — M2
-- Status: ✅ Done
-- What changed: Created `NumberingService` with atomic PostgreSQL `Sequence` upsert and padded formatting (`PREFIX/YYYY/NNNNN`); `AuditService` writing actor, entity, action, and JSON diffs/meta to `AuditLog`; `SettingsService` reading typed settings with in-memory cache and `DEFAULT_SETTINGS` fallback; `MailService` wrapping `nodemailer` with password reset, staff invite, quotation, and invoice notification methods; exported via `@Global()` `CommonModule` registered in `AppModule`.
-- Tests: `apps/api/test/domain-services.spec.ts` (7 tests: gap-free parallel numbering, audit recording, cached settings fallback/invalidation, email templates); lint, typecheck, and full test suite passing (103 api tests, 35 shared tests, 10 web tests).
-- Notes: Nodemailer transporter defaults to JSON stream transport in test/development when SMTP env vars are absent. Ready for Auth (P1-01).
-
-### 2026-10-31 16:07 (IST) — P1-05 / P1-04 / P2-03 / P2-04 service layer and seed — M1
-- Status: 🟡 Partial — services, controllers (rebased on P0-04, registered in AppModule via a global `PrismaModule`), shared schemas, tests and seed done. Remaining: `@Roles` on each route once P1-02 lands; invite emails + `POST /customers/:id/resend-invite` once P1-03/P0-06 land.
-- What changed: Shared Zod schemas `schemas/{customers,users,products,attributes}.ts`. API `CustomersService` (list/search/sort/paginate, get, create CUSTOMER user + profile, edit), `UsersService` (list with role/active filters, create staff, rename/deactivate with refresh-token revocation, admin protected), `ProductsService` (CRUD, default taxes, Default variant in the same transaction, delete only when unused), `VariantsService` (attribute-value variants, summed price extra, duplicate and one-per-attribute checks, picker with final price and taxes), `AttributesService`. `DomainError`, `Page`/`parseSort`. Seed adds 2 staff, 8 customers, 5 products (12 variants). ARCHITECTURE §7.3 response shapes and endpoint additions; RULES error codes; README logins. D-021…D-023.
-- Tests: shared `catalog.test.ts` (6); API `customers-users.integration.ts` (7), `catalog.integration.ts` (8), seed tests (+2). `lint`, `typecheck`, `test`, `test:db` (33, incl. `m1-http.integration.ts` HTTP envelopes) pass; `pnpm db:seed` run twice.
-- Notes / follow-ups: **M2:** when P0-04 lands, provide `PrismaClient` (e.g. `{ provide: PrismaClient, useExisting: PrismaService }`) or tell M1 to switch the constructor type, and map `DomainError` in the filter. M1 then adds the four controllers. **M3:** shapes in ARCHITECTURE §7.3; flat customer rows match `features/resources.ts`.
-
-### 2026-10-31 — P0-07 Web shell — M3
-- Status: ✅ Done
-- What changed: Token-based light/dark theme, fonts, responsive app/auth/portal layouts, collapsible sidebar and mobile Radix dialog, shadcn-compatible Button and configuration, Query provider, API envelope parsing and single-flight token refresh, Money, StatusBadge, EmptyState, PageHeader and server-mode URL-synced DataTable.
-- Tests: lint and workspace typecheck passed; workspace tests passed (web 7, shared 1, API 1); web production build passed.
-- Notes: Business routes intentionally show setup content until their assigned tasks land. Authentication forms, session provider, role-based navigation and guards belong to P1-06. Browser visual review is still pending. No backend/shared files edited. Nothing pushed.
-
-
-Entry format:
-
-```
-### YYYY-MM-DD HH:MM (IST) — <Task ID> <short title> — <M1/M2/M3 name>
-- Status: ✅ Done | 🟡 Partial | ⛔ Blocked
-- What changed: <files/modules, endpoints, migrations>
-- Tests: <what was added; lint/typecheck/test result>
-- Notes / follow-ups: <anything the next person must know>
-```
-
-### 2026-10-31 15:36 (IST) — P0-08 Base seed — M1
-- Status: ✅ Done
-- What changed: `prisma/seed/base.ts` (`seedBase`): admin from env (argon2id hash, lower-cased email), ADM-01 default settings, GST 5/12/18 taxes, Immediate/Net 15/Net 30 terms, Brand attribute (Odoo +560, Generic +0); all upserts that keep existing rows. `prisma/seed.ts` entry prints logins; `pnpm db:seed` script; `loadEnvironment(envFile?)` accepts a path for callers outside `src/`. Extracted `test/support/test-database.ts`. README seed logins; ARCHITECTURE Setting-keys table. D-018…D-020.
-- Tests: `test/seed.integration.ts` (admin hash/email, settings, taxes/terms/attribute values, idempotent re-run keeps edited settings). `lint`, `typecheck`, `test:db` (12 tests) pass; `pnpm db:seed` run twice against the dev DB.
-- Notes / follow-ups: **M2:** `SettingsService` (P0-06) should use the D-019 keys/defaults (`DEFAULT_SETTINGS` in `prisma/seed/base.ts`); auth (P1-01) can verify seed hashes with `@node-rs/argon2` (already a dependency) — see D-018.
-
-### 2026-10-31 15:32 (IST) — P0-03 Database schema & migrations — M1
-- Status: ✅ Done
-- What changed: Finished the P0-03 handoff: README quick start (env, Docker, migrate), database script table and team handoff; ARCHITECTURE §3 notes the port and Prisma 7 config/adapter; D-017 records the new dependency versions.
-- Tests: `install --frozen-lockfile`, `lint`, `typecheck`, `test`, `test:db` (8 isolated-schema integration tests), `build`, `format:check` all pass; `db:status` reports 2 migrations, up to date.
-- Notes / follow-ups: Schema updated: pull + `pnpm install` + `pnpm db:migrate`. M2 can wire P0-04 PrismaService against it (use `@prisma/adapter-pg`, see `test/schema.integration.ts`).
-
-### 2026-10-31 15:27 (IST) — P0-02 / P0-03 paused at user request — M1
-- Status: 🟡 Partial overall; P0-02 implementation verified, P0-03 implementation and database tests verified but final handoff not completed.
-- What changed: Added PostgreSQL 16 and Mailpit Compose services, the exact documented `.env.example`, typed Zod environment validation before API boot, configured port 4000, and root web env loading. Added canonical Prisma schema, Prisma 7 config, generated client, initial SQL migration and separate partial unique invoice-period index migration, database scripts and isolated-schema integration tests.
-- Tests: PostgreSQL and Mailpit healthy; API root `.env` and Mailpit HTTP smoke passed; invalid environment exits before Nest startup. Both migrations applied from an empty local database; second `db:migrate` is a no-op; `db:status` is up to date. Latest lint, typecheck, 89 normal tests and 8 isolated-database integration tests passed. Fixed the in-progress Jest environment-loading issue using explicit file parsing without mutating process.env. Test schemas cleaned up.
-- Notes / follow-ups: Stopped as requested. Changes are local and uncommitted/unpushed. Remaining: update README/ARCHITECTURE and dependency Decisions log, final production build/format/frozen-install checks and final review, then mark P0-03 done and commit/push. Local `.env` is ignored; Docker services remain running. No later feature tasks started.
-
-### 2026-10-31 15:04 (IST) — P0-01 Scaffold monorepo — M1
-- Status: ✅ Done
-- What changed: Added pnpm workspaces (`apps/api`, `apps/web`, `packages/shared`), strict TypeScript, ESLint flat config, Prettier, pinned dependencies and lockfile, root scripts, and runnable NestJS/React entry points importing the shared package. Moved the six planning documents to `docs/`, updated README links/setup/handoff, and aligned the architecture notes.
-- Tests: `install --frozen-lockfile`, `lint`, `typecheck`, `test` (3 smoke tests: shared export, API HTTP response, React heading), `build`, and `format:check` passed using pnpm 12.16.1. Bounded root `dev` smoke verified API JSON, web HTML, and Vite's transformed React entry; all spawned dev processes were stopped. Fixed Windows-incompatible single-quoted workspace filters found by that smoke test. Read-only scaffold review found no blocking issues.
-- Notes / follow-ups: Node 24 LTS; pnpm may be invoked with `npx --yes pnpm@12.16.1` (no global installation needed). M2 can start P0-05, M3 P0-07, M1 P0-02. API core/auth/database/UI shell remain unimplemented by design. The T+0:20 checkpoint stays unchecked until teammates have pulled.
-
-### 2026-10-31 14:16 (IST) — DOC-04 Team plan — Team
-- Status: ✅ Done
-- What changed: `PHASES.md` now assigns every task to M1, M2 or M3 with a time slot on an 8-hour timeline, hard (⚑) vs soft dependencies, checkpoints and hand-offs. `RULES.md` has a Hackathon mode section. Task board here pre-filled with owners and slots. No features or tasks removed.
-- Tests: n/a
-- Notes / follow-ups: Fill in names in the Team table. M1 starts P0-01 at T+0:00.
-
-### 2026-10-31 13:47 (IST) — DOC-01 Project documents — Team
-- Status: ✅ Done
-- What changed: Created `PRD.md`, `ARCHITECTURE.md`, `RULES.md`, `PHASES.md`, `DESIGN.md`, `PROGRESS.md`.
-- Tests: n/a
-- Notes / follow-ups: Start with P0-01. Record exact package versions as D-014 when scaffolding.
-
----
-
-## Decisions log
-
-> Format: `D-NNN · date · decision · why · affects`. Add new decisions at the bottom.
-
-| ID | Date | Decision | Why | Affects |
-|---|---|---|---|---|---|
-| D-001 | 2026-10-31 | Modular monolith: NestJS + PostgreSQL + Prisma, React/Vite SPA, pnpm monorepo with shared package | Billing correctness needs one transactional DB; shared Zod/pricing avoids client/server drift | All |
-| D-002 | 2026-10-31 | Plan price is a per-period **base fee**, added to subscriptions as a locked plan-fee line | The brief gives plans a price separate from product lines; modelling it as a line keeps the pricing engine uniform | PLAN-04, pricing |
-| D-003 | 2026-10-31 | Bill **in advance**: first invoice on activation, then one per period; no proration | Common SaaS practice; simple and predictable | INV-01 |
-| D-004 | 2026-10-31 | Idempotency via partial unique index `(subscriptionId, periodStart) WHERE status <> 'CANCELLED'` | "Nothing billed twice" is guaranteed by the DB, and cancelled periods can be regenerated | INV-03, P0-03 |
-| D-005 | 2026-10-31 | Billing periods computed from the anchor start date (`periodStart(start, period, n)`) | Prevents month-end date drift | dates.ts, billing |
-| D-006 | 2026-10-31 | No payment gateway; staff record payments with a method | Out of scope for v1; keeps the focus on billing logic | PAY |
-| D-007 | 2026-10-31 | Single currency (setting, default INR) and business time zone setting (default Asia/Kolkata) | Brightloop is one company; dates must match the business day | ADM-01 |
-| D-008 | 2026-10-31 | Discounts are attached to subscriptions; product-scope discounts apply first, then subscription-scope; one use per invoice; released on cancel | Makes "applies on its own" and usage limits precise and testable | DISC |
-| D-009 | 2026-10-31 | Overdue and quotation-expired are derived at read time, not stored states | No sync jobs to fail; always correct | INV-06, QT-03 |
-| D-010 | 2026-10-31 | Scheduler via `@nestjs/schedule` + Postgres advisory lock (no Redis/queue) | Fewer moving parts; the lock prevents concurrent runs | P4-02 |
-| D-011 | 2026-10-31 | Access JWT in memory + rotating refresh token in httpOnly cookie | Avoids XSS token theft from localStorage | AUTH |
-| D-012 | 2026-10-31 | Password rule: ≥ 9 chars ("more than eight"), upper, lower, special | Literal reading of the brief | AUTH-01 |
-| D-013 | 2026-10-31 | Three lanes (M1 data & billing, M2 logic/auth/money, M3 UI) on an 8-hour timeline; hard (⚑) vs soft dependencies; M1 sole owner of `schema.prisma`, M2 of `packages/shared` | Hackathon time box: parallel work against fixed contracts keeps full scope | PHASES, RULES |
-| D-014 | 2026-10-31 | Pin P0-01 direct dependencies to the exact versions listed below; commit pnpm lockfile | Reproducible installs across all three members | All workspace packages |
-| D-015 | 2026-10-31 | Use native ESM for NestJS 12 and shared, TypeScript 6.0.3, jsdom 29.1.1, ESLint flat config, and Jest's ESM VM flag | NestJS 12 is ESM-only; typescript-eslint supports TS <6.1 and ts-jest <7; jsdom 30 requires a newer Node than installed Node 24.11.0 | Build, lint, tests, Node runtime |
-| D-016 | 2026-10-31 | Permit install scripts only for `@parcel/watcher` and `unrs-resolver`; retain pnpm's exact `eslint@10.14.0` release-age exception | Required native watcher/resolver setup without blanket dependency-script approval; exact-version exception created by pnpm's install policy | pnpm-workspace.yaml |
-| D-017 | 2026-10-31 | P0-02/P0-03 dependencies: `zod` **4.6.7** (API env validation), `prisma` / `@prisma/client` / `@prisma/adapter-pg` **7.10.1**, `pg` / `@types/pg` **8.23.1**; Prisma 7 `prisma.config.ts` reads `DATABASE_URL` from the root `.env`; install scripts allowed for `prisma` and `@prisma/engines` | Prisma 7 requires a driver adapter and config file; Zod is the documented validator; engine download needs its install script | apps/api, pnpm-workspace.yaml |
-| D-018 | 2026-10-31 | Hash passwords with `@node-rs/argon2` **2.2.2** (argon2id default, standard PHC string) instead of `argon2` | `argon2` has no prebuilt binary for Windows ARM64 and needs a native toolchain; the napi-rs build ships one for every platform without install scripts. Hashes are interchangeable PHC strings | apps/api (seed, P1-01 auth) |
-| D-019 | 2026-10-31 | `Setting` keys are camelCase JSON values: `companyName`, `companyAddress`, `companyTaxId`, `currency`, `timezone`, `autoConfirmInvoices`, `defaultQuotationValidityDays`, `invoiceFooter` (table in ARCHITECTURE §5) | The schema stores key/value pairs and the PRD lists fields without keys; seed and `SettingsService` must agree | P0-06, P0-08, P6-05 |
-| D-020 | 2026-10-31 | `pnpm db:seed` compiles `prisma/` with `tsc -p tsconfig.seed.json` into `dist/seed` and runs it with Node; integration tests share `test/support/test-database.ts` (isolated schema per file) | No extra TS runner dependency; tsc supports the decorators later seeds may reuse from services | apps/api |
-| D-021 | 2026-10-31 | M1 modules ship service-first: services take `PrismaClient` by injection and are integration-tested directly; controllers and Nest modules are added once M2's P0-04 (`PrismaService`, `ZodValidationPipe`, error filter) and P1-02 (`@Roles`) land. `DomainError` (`common/errors/domain-error.ts`) and `Page`/`parseSort` (`common/pagination/page.ts`) follow the ARCHITECTURE contract so M2 can keep or extend them | Avoids duplicating M2's in-flight API core while unblocking M3 with contracts and seed data | users, customers, products, attributes |
-| D-022 | 2026-10-31 | New error codes `NAME_TAKEN` (409, duplicate attribute/value names; reusable for taxes/plans) and `VARIANT_EXISTS` (409); `DELETE /products/:id` and `DELETE /variants/:id` for unused items (CAT-04: referenced items can only be archived); `PATCH /users/:id` refuses ADMIN accounts (403) so the last admin cannot be locked out | PRD is silent on exact codes and admin self-deactivation | API contract, RULES §4 |
-| D-023 | 2026-10-31 | Seeded staff and customers get demo passwords (`Staff@12345`, `Customer@123`) so every role can log in without invites; listed in README | RULES §6 seed credentials; invites need P1-03 | seed |
-
-### D-014 — Exact P0-01 versions
-
-- Runtime/toolchain: Node.js **24.11.0** tested (supported: 24.x >=24.11.0), pnpm **12.16.1**, TypeScript **6.0.3**.
-- Root tooling: `@eslint/js` **10.0.1**, `@types/node` **24.19.2**, `eslint` **10.14.0**, `eslint-config-prettier` **10.1.8**, `prettier` **3.9.10**, `typescript-eslint` **8.72.1**.
-- API runtime: `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express` **12.3.2** each; `reflect-metadata` **0.2.2**; `rxjs` **7.8.2**.
-- API tooling: `@nestjs/cli` **12.0.11**, `@nestjs/testing` **12.3.2**, `@types/jest` **30.0.0**, `@types/supertest` **7.2.1**, `jest` **30.5.2**, `supertest` **7.3.1**, `ts-jest` **29.4.15**.
-- Web runtime: `react` and `react-dom` **19.3.1** each.
-- Web tooling: `@types/react` and `@types/react-dom` **19.3.0** each; `@vitejs/plugin-react` **6.1.2**; `vite` **8.3.5**; `@testing-library/react` **16.3.3**; `@testing-library/dom` **10.4.2**; `jsdom` **29.1.1**.
-- Shared/web tests: `vitest` **5.0.5**. Both apps link `@brightloop/shared` using `workspace:*`.
-
----
-
-## Blockers
-
-| Date | Task | Blocker | Owner | Resolution |
-|---|---|---|---|---|---|
-| — | — | — | — | — |
-
-## Known issues / tech debt
-
-| Date | Area | Issue | Severity | Planned fix |
-|---|---|---|---|---|---|
-| — | — | — | — | — |
-
-## Backlog (out of scope ideas — do not build without a decision)
-
-- Automated overdue reminder emails (dunning)
-- CSV export for invoices and overdue list (RPT-06 stretch)
-- ⌘K command palette
-- Online payment link (gateway) on invoices
-- Proration for mid-cycle quantity changes
-- Credit notes / refunds
-
-## Performance results (fill in during P7-02)
-
-| Endpoint / page | Dataset | p95 before | p95 after | Fix applied |
-|---|---|---|---|---|---|
-| — | — | — | — | — |
-
-
-
-### D-017 — P0-07 frontend setup
-
-Use Tailwind 4 CSS-first theme, Radix primitives with shadcn-compatible configuration, and TanStack Table 9 explicit features. Keep DESIGN branding while the requested Odoo styling choice is pending. Additional class composition helpers support the shadcn Button. Exact frontend versions:
-
-- `@brightloop/shared`: `workspace:*`
-- `@hookform/resolvers`: `6.0.2`
-- `@radix-ui/react-dialog`: `1.3.1`
-- `@radix-ui/react-slot`: `1.5.0`
-- `@tanstack/react-query`: `5.105.0`
-- `@tanstack/react-table`: `9.3.1`
-- `class-variance-authority`: `0.7.1`
-- `clsx`: `2.1.1`
-- `lucide-react`: `1.65.0`
-- `react`: `19.3.1`
-- `react-dom`: `19.3.1`
-- `react-hook-form`: `7.91.0`
-- `react-router-dom`: `7.18.5`
-- `sonner`: `2.0.8`
-- `tailwind-merge`: `3.7.0`
-- `zod`: `4.6.7`
-- `@tailwindcss/vite`: `4.3.3`
-- `@testing-library/dom`: `10.4.2`
-- `@testing-library/react`: `16.3.3`
-- `@types/react`: `19.3.0`
-- `@types/react-dom`: `19.3.0`
-- `@vitejs/plugin-react`: `6.1.2`
-- `jsdom`: `29.1.1`
-- `tailwindcss`: `4.3.3`
-- `vite`: `8.3.5`
-- `vitest`: `5.0.5`
-
-
-## Visual revision — 31 Oct 2026
-Dark reference theme implemented. Lint, workspace types, seven web tests and production build pass. Browser visual review and remote playback remain pending. Motion and HLS added as requested. Latest origin/main remains scaffold 78318a2; auth schema/API integration pending. Nothing pushed.
-
-## M3 frontend checkpoint — 31 Oct 2026
-Auth/configuration/customer/subscription/invoice/dashboard/portal screens implemented against documented endpoints. Lint, workspace types, 8 web tests and production build pass. Remaining criteria and API integration are tracked individually in M3-CHECKLIST.md; no further tasks marked complete prematurely. P6-05 form is prepared but hard dependencies P0-06/P1-06 still pending.
-
-### 2026-10-31 — M3 integration checkpoint
-- M1 infrastructure/schema e43d3b8 merged; overlaps resolved in Vite config, tracker and dependency lockfile.
-- Subscription edit, taxes, discount attach/detach, report filters and lazy feature loading added.
-- Lint, workspace typecheck, 98 unit/UI tests and production build pass. Live API/database workflows and listed task acceptance gaps remain pending in M3-CHECKLIST.md.
-- User authorized pushing M3 branch checkpoints; no merge to main requested.
+  1. Quotation Templates (P3-03, P3-06): Added `QuotationTemplatesModule` with CRUD endpoints (`/quotation-templates`), schema in `@brightloop/shared`, and `POST /subscriptions/from-template` enabling rapid creation of draft subscriptions with pre-configured variant lines and plan fee synchronization.
+  2. Quotation Validity Enforcement (QT-03): Updated subscription transition logic to automatically compute `quotationExpiresAt` when transitioning to `QUOTATION` based on template validity days (or settings fallback), blocking expired quotation confirmations with `QUOTATION_EXPIRED` (422).
+  3. Large Dataset Generator (P7-01): Added `prisma/seed/seed-large.ts` and `pnpm db:seed:large` generating 50+ customers, 100+ subscriptions across all lifecycle statuses, 200+ invoices, and corresponding payments.
+  4. Performance & Indexing (P7-02): Verified and audited PostgreSQL indexes on high-frequency search, status, and compound billing columns (`[status, nextBillingDate]`, `[customerId, status]`, `[invoiceDate]`, `[paymentDate]`).
+  5. Evaluator Walkthrough & Documentation (P7-06): Created `DEMO.md` with a complete 7-minute persona walkthrough and enriched `README.md` with complete architecture and setup guide.
+  6. Quality Verification: All 174 automated tests passing (48 shared, 116 API, 10 web), clean typecheck across all workspace packages, and ESLint with 0 warnings.

@@ -69,6 +69,24 @@ describe('Features API (Auth, Discounts, Reports, Portal)', () => {
       findMany: mockFn([]),
       count: mockFn(0),
     },
+    quotationTemplate: {
+      findMany: mockFn([]),
+      count: mockFn(0),
+      findUnique: mockFn(null),
+      create: mockFn({
+        id: '99999999-9999-9999-9999-999999999999',
+        name: 'Enterprise Cloud Pack',
+        validityDays: 30,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lines: [],
+      }),
+      delete: mockFn({ id: '99999999-9999-9999-9999-999999999999' }),
+    },
+    quotationTemplateLine: {
+      createMany: mockFn({ count: 1 }),
+      deleteMany: mockFn({ count: 1 }),
+    },
     $transaction: (args: unknown) => {
       if (Array.isArray(args)) {
         return Promise.all(args);
@@ -200,6 +218,25 @@ describe('Features API (Auth, Discounts, Reports, Portal)', () => {
       expect(res.body).toHaveProperty('activeSubscriptions');
       expect(res.body).toHaveProperty('amountDue');
       expect(res.body).toHaveProperty('quotations');
+    });
+
+    it('GET /quotation-templates returns paginated templates for STAFF/ADMIN', async () => {
+      const res = await request(app.getHttpServer())
+        .get('/api/v1/quotation-templates')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveProperty('data');
+      expect(res.body).toHaveProperty('meta');
+    });
+
+    it('POST /subscriptions/from-template validates payload', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/api/v1/subscriptions/from-template')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ templateId: 'not-a-uuid', customerId: 'not-a-uuid' });
+
+      expect(res.status).toBe(400);
     });
   });
 });

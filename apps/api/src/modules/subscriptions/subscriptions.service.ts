@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, PrismaClient, type SubscriptionStatus } from '@prisma/client';
 import { z } from 'zod';
 import {
+  type FromTemplateDto,
   type SubscriptionAction,
   SUBSCRIPTION_TRANSITIONS,
   addPeriods,
@@ -177,6 +178,97 @@ export class SubscriptionsService {
     });
   }
 
+  async createFromTemplate(body: FromTemplateDto, actorId: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const template = await tx.quotationTemplate.findUnique({
+        where: { id: body.templateId },
+        include: {
+          lines: { orderBy: { sequence: 'asc' } },
+          plan: true,
+        },
+      });
+      if (!template) throw notFound('QuotationTemplate');
+      if (!template.isActive) {
+        throw new DomainError('INACTIVE_TEMPLATE', 'Quotation template is inactive', 422);
+      }
+
+      const customer = await tx.customer.findUnique({ where: { id: body.customerId } });
+      if (!customer) throw notFound('Customer');
+
+      let paymentTermId = template.paymentTermId;
+      if (!paymentTermId) {
+        const defaultPt = await tx.paymentTerm.findFirst({
+          where: { isActive: true },
+          orderBy: { dueDays: 'asc' },
+        });
+        if (!defaultPt) {
+          throw new DomainError('NO_PAYMENT_TERM', 'No active payment term found', 422);
+        }
+        paymentTermId = defaultPt.id;
+      }
+      const settings = await readSettings(tx);
+      const startDate = body.startDate ?? todayInTz(settings.timezone);
+
+      const templateVariantIds = template.lines.map((l) => l.variantId);
+      const variants = await tx.productVariant.findMany({
+        where: { id: { in: templateVariantIds } },
+        include: {
+          product: { include: { taxes: true } },
+        },
+      });
+      const variantMap = new Map(variants.map((v) => [v.id, v]));
+
+      const subLines: SubscriptionBody['lines'] = template.lines.map((tl) => {
+        const v = variantMap.get(tl.variantId);
+        const description = v ? `${v.product.name} — ${v.name}` : 'Item';
+        const unitPrice = tl.unitPrice
+          ? tl.unitPrice.toString()
+          : (v ? v.priceExtra.add(v.product.salesPrice).toString() : '0.00');
+        const taxIds = v ? v.product.taxes.map((t) => t.id) : [];
+        return {
+          variantId: tl.variantId,
+          description,
+          quantity: tl.quantity,
+          unitPrice,
+          taxIds,
+          isPlanFee: false,
+        };
+      });
+
+      const plan = await this.checkPlan(tx, {
+        customerId: body.customerId,
+        planId: template.planId,
+        paymentTermId,
+        lines: subLines,
+      });
+
+      const number = await nextNumber(tx, 'SUB', startDate.slice(0, 4));
+      const sub = await tx.subscription.create({
+        data: {
+          number,
+          customerId: body.customerId,
+          planId: template.planId,
+          paymentTermId,
+          quotationTemplateId: template.id,
+          startDate: toDate(startDate),
+          notes: template.notes ?? null,
+          lines: { create: this.lines(subLines, plan) },
+        },
+      });
+
+      await this.audit(
+        tx,
+        sub.id,
+        actorId,
+        'created:from-template',
+        null,
+        'DRAFT',
+        `Template: ${template.name}`,
+      );
+      return this.get(sub.id, tx);
+    });
+  }
+
   /** Editing is allowed in DRAFT/QUOTATION; lines are replaced and the plan-fee line re-synced. */
   async update(id: string, body: Partial<SubscriptionBody>, actorId: string) {
     return this.prisma.$transaction(async (tx) => {
@@ -261,7 +353,7 @@ export class SubscriptionsService {
       await tx.$queryRaw`SELECT id FROM "Subscription" WHERE id = ${id}::uuid FOR UPDATE`;
       const sub = await tx.subscription.findUnique({
         where: { id },
-        include: { plan: true, renewal: { select: { id: true } } },
+        include: { plan: true, quotationTemplate: true, renewal: { select: { id: true } } },
       });
       if (!sub) throw notFound('Subscription');
       const check = canTransition(sub.status, action, sub.plan, {
@@ -281,17 +373,29 @@ export class SubscriptionsService {
       const data: Prisma.SubscriptionUpdateInput = {};
       if (action === 'send') {
         data.status = 'QUOTATION';
+        const validityDays =
+          sub.quotationTemplate?.validityDays ??
+          settings.defaultQuotationValidityDays ??
+          30;
         data.quotationExpiresAt = toDate(
-          addPeriods(
-            today,
-            'DAILY',
-            settings.defaultQuotationValidityDays ?? 30,
-          ),
+          addPeriods(today, 'DAILY', validityDays),
         );
-      } else if (action === 'revert') data.status = 'DRAFT';
-      else if (action === 'confirm')
+      } else if (action === 'revert') {
+        data.status = 'DRAFT';
+      } else if (action === 'confirm') {
+        if (
+          sub.status === 'QUOTATION' &&
+          sub.quotationExpiresAt &&
+          toIso(sub.quotationExpiresAt) < today
+        ) {
+          throw new DomainError(
+            'QUOTATION_EXPIRED',
+            'Cannot confirm an expired quotation. Re-send to update validity.',
+            422,
+          );
+        }
         Object.assign(data, { status: 'CONFIRMED', confirmedAt: new Date() });
-      else if (action === 'activate')
+      } else if (action === 'activate')
         Object.assign(data, { status: 'ACTIVE', activatedAt: new Date() });
       else if (action === 'pause')
         Object.assign(data, { status: 'PAUSED', pausedAt: new Date() });

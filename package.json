@@ -19,6 +19,7 @@
     "db:deploy": "pnpm --filter @brightloop/api db:deploy",
     "db:status": "pnpm --filter @brightloop/api db:status",
     "db:seed": "pnpm --filter @brightloop/api db:seed",
+    "db:seed:large": "pnpm --filter @brightloop/api db:seed:large",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

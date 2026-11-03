@@ -83,6 +83,8 @@ export default function App() {
                       'config/taxes': 'taxes',
                       'config/payment-terms': 'terms',
                       'catalog/plans': 'plans',
+                      'config/discounts': 'discounts',
+                      'quotation-templates': 'quotationTemplates',
                       customers: 'customers',
                     }).map(([path, key]) => (
                       <Route

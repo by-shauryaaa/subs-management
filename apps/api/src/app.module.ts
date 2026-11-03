@@ -15,6 +15,7 @@ import { BillingModule } from './modules/billing/billing.js';
 import { DiscountsModule } from './modules/discounts/discounts.module.js';
 import { ReportsModule } from './modules/reports/reports.module.js';
 import { PortalModule } from './modules/portal/portal.module.js';
+import { QuotationTemplatesModule } from './modules/quotation-templates/quotation-templates.module.js';
 import {
   ConfigModule,
   InvoicesModule,
@@ -38,6 +39,7 @@ import {
     DiscountsModule,
     ReportsModule,
     PortalModule,
+    QuotationTemplatesModule,
   ],
   controllers: [AppController],
   providers: [

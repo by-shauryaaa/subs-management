@@ -15,7 +15,8 @@
     "db:migrate": "prisma migrate dev && prisma generate",
     "db:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
-    "db:seed": "prisma generate && tsc -p tsconfig.seed.json && node dist/seed/prisma/seed.js"
+    "db:seed": "prisma generate && tsc -p tsconfig.seed.json && node dist/seed/prisma/seed.js",
+    "db:seed:large": "prisma generate && tsc -p tsconfig.seed.json && node dist/seed/prisma/seed-large.js"
   },
   "dependencies": {
     "@brightloop/shared": "workspace:*",
